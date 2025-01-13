@@ -3,7 +3,7 @@
 1、 安装依赖库
 
 ```commandline
-pip install bs4
+pip install beautifulsoup4
 pip install requests
 ```
 
