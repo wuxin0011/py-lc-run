@@ -1,0 +1,13 @@
+
+# filter file
+*.iml
+*.html
+
+# filter folder
+out
+.idea
+**/__pycache__/
+
+**/cookie.txt
+
+!main
