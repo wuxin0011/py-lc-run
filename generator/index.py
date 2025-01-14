@@ -20,6 +20,27 @@ RIGHT_List_RE = '\]'
 MATCH_TYPE = f'str|int|bool|float|{TREE_NODE_STR}|{LIST_NODE_STR}'
 
 
+
+def testcase(test=-1, start= 1, end=0x3ffffff, use=True):
+    '''
+    参数说明
+    :param use: 是否启用这个优先级最高默认启用 如果 False 表示这个包装器失效
+    :param test:  默认为-1 表示 [start,end] 用例生效 ，如果需要测试某一个用力 直接使用 test=x ，这时 [start,end] 将会失效
+    :param start: 在 test 不为 -1 情况下 测试案例从 start 开始
+    :param end:   在 test 不为 -1 情况下 测试案例 end 结束
+    :return:
+    '''
+
+    def wrapper(f):
+        setattr(f, "start", max(1, start))
+        setattr(f, "end", max(1, end))
+        setattr(f, "use", use)
+        setattr(f, "test", test)
+        return f
+
+    return wrapper
+
+
 # ------------------------------------------------------引用类-----------------------------------------------
 class TreeNode:
     def __init__(self, val=-1, left=None, right=None):
@@ -515,6 +536,11 @@ def leetcode_run(**kwargs):
     c = kwargs['class_name']
     m = kwargs['method']
     filename = kwargs['filename']
+
+    test_case_start = getattr(c(), "start", 1)
+    test_case_end = getattr(c(), "end", 0x3ffffffff)
+    test_case_use = getattr(c(), "use", True)
+    test_case_test = getattr(c(), "test", -1)
     if hasattr(c, m):
         call_method = getattr(c(), m)
         args_types = []
@@ -539,6 +565,7 @@ def leetcode_run(**kwargs):
         compare_time = 1
         compare_result = []
         all_ok = True
+
         while i < len(inputs):
             if len(inputs[i]) == 0:
                 i += 1
@@ -555,6 +582,15 @@ def leetcode_run(**kwargs):
             while inputs[i] is None or len(inputs[i]) == 0: i += 1
             # 希望返回的结果
             return_except = parse_lc_type(args_input=inputs[i], args_type=return_type)
+
+            if test_case_use:
+                if test_case_test != -1 and compare_time != test_case_test or (test_case_test == -1 and (compare_time > test_case_end or compare_time < test_case_start)):
+                    i += 1
+                    compare_time += 1
+                    if (test_case_test != -1 and compare_time > test_case_test) or compare_time > test_case_end:
+                        break
+                    else:
+                        continue
 
             # 调用函数
             solution = getattr(c(), m)

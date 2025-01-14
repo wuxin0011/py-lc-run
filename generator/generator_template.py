@@ -73,7 +73,7 @@ def default_template(username='', access_url=''):
     '''
     template_header = f'''
 # ------------------------template auto generator---------------------------------------
-from generator.index import leetcode_run,ListNode,TreeNode
+from generator.index import leetcode_run,ListNode,TreeNode,testcase
 import os
 
 # -----------------------------------------------------------------
@@ -95,9 +95,9 @@ from functools import cache, cmp_to_key, lru_cache
 inf = math.inf
 fmax = lambda x, y: x if x > y else y
 fmin = lambda x, y: x if x < y else y
-MOD = 10 ** 9 +
+MOD = 10 ** 9 + 7
 
-
+# @testcase(test=-1,start= 1,end = 0x3ffffff,use = True)
 '''
     return template_header
 
