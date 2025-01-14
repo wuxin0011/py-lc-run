@@ -91,6 +91,13 @@ from functools import cache, cmp_to_key, lru_cache
 # @author: {username}
 # @access_url: {access_url}\n\n
 
+
+inf = math.inf
+fmax = lambda x, y: x if x > y else y
+fmin = lambda x, y: x if x < y else y
+MOD = 10 ** 9 +
+
+
 '''
     return template_header
 
