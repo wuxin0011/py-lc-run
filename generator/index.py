@@ -1,9 +1,11 @@
 import inspect
 import re
+import typing
 from collections import deque
 
 from generator.generator_template import CONSTRUCTOR_FLAG
 
+GENER_INDEX_STR = 'generator.index.'
 TREE_NODE_STR = 'generator.index.TreeNode'
 LIST_NODE_STR = 'generator.index.ListNode'
 LEFT_OPTIONAL = 'typing.Optional['
@@ -202,6 +204,17 @@ class ParseInput:
             ans += right
         return ans
 
+    @staticmethod
+    def ignore_optional_or_type(s: str):
+        return (s
+                .replace("typing.", "")
+                .replace("Optional", "")
+                .replace("<class ", "")
+                .replace(">", "")
+                .replace("\'", "")
+                .replace(GENER_INDEX_STR, "")
+                )
+
     # 解析字符串相关
     @staticmethod
     def is_ignore_str(c: str):
@@ -210,7 +223,7 @@ class ParseInput:
     @staticmethod
     def parse_list(deep, input_str, type_name):
         # print(deep, input_str, type_name)
-        input_str = ParseInput.parse_list_str(input_str, type_name)
+        input_str = ParseInput.parse_list_str(deep, input_str, type_name)
         only_name = ''
         if ListNode.__name__ in type_name or TreeNode.__name__ in type_name:
             only_name = type_name
@@ -219,21 +232,15 @@ class ParseInput:
                 if ParseInput.build_match_type(deep, name) == type_name:
                     only_name = name
                     break
+                if ParseInput.build_match_type(deep, name, left='List[') == type_name:
+                    only_name = name
+                    break
                 if ParseInput.build_match_type(deep, t=name, left='typing.Optional[') == type_name:
                     only_name = name
                     break
         if len(only_name) == 0:
             return []
-        if deep == 4:
-            pass
-        elif deep == 3:
-            return ParseInput.parse_three_type_array_list(input_str, only_name)
-        elif deep == 2:
-            return ParseInput.parse_two_type_array_list(input_str, only_name)
-        elif deep == 1:
-            return ParseInput.parse_one_type_array_list(input_str, only_name)
-        else:
-            return []
+        return ParseInput.parse_one_type_array_list(deep, input_str, only_name)
 
     @staticmethod
     def parse_one_str_array_list(input_str: str):
@@ -303,7 +310,7 @@ class ParseInput:
                 if deep == 1:
                     pass
                 elif deep == 2:
-                    tow = []
+                    two = []
                 elif deep == 3:
                     one = []
             elif c == ']':
@@ -311,13 +318,13 @@ class ParseInput:
                 if deep == 0:
                     break
                 elif deep == 1:
-                    ans.append(tow)
-                    tow = []
+                    ans.append(two)
+                    two = []
                     cur = ''
                 elif deep == 2:
                     one.append(cur)
                     cur = ''
-                    tow.append(one[:])
+                    two.append(one[:])
                     one = []
             elif c == ',':
                 if deep == 1:
@@ -333,64 +340,68 @@ class ParseInput:
         return ans
 
     @staticmethod
-    def parse_list_str(input_str, type_name):
+    def parse_list_str(deep=1, input_str='[]', type_name='List[int]'):
         '''
         将输入list类型转换为对应list 默认转换为 list[str]
+        :param deep:
         :param input_str:
         :param type_name:
         :return:
         '''
-        typing_cnt = max(type_name.count('typing.List'), type_name.count('typing.Optional'))
-        if typing_cnt == 1 or str(type(ListNode)) == type_name or str(type(TreeNode)):
+        typing_cnt = deep
+        if typing_cnt == 1 or (ListNode.__name__ in type_name or TreeNode.__name__ in type_name):
             return ParseInput.parse_one_str_array_list(input_str)
         if typing_cnt == 2:
             return ParseInput.parse_two_str_array_list(input_str)
         if typing_cnt == 3:
             return ParseInput.parse_three_str_array_list(input_str)
-
         else:
             raise Exception(type_name + " not implements ! place implements")
 
     @staticmethod
-    def parse_one_type_array_list(input_str, name: str):
-        if len(input_str) == 0:
+    def parse_one_type_array_list(deep=0, input_str=typing.Any, name=''):
+        '''
+        递归处理列表
+        :param deep:
+        :param input_str:
+        :param name:
+        :return:
+        '''
+        if deep == 0:
             return []
-        ans = []
-        if name is None:
-            raise BaseException("type_name not allow None")
+        elif deep == 1:
+            if len(input_str) == 0:
+                return []
+            ans = []
+            if name is None:
+                raise BaseException("type_name not allow None")
 
-        if ListNode.__name__ in name:
-            return ListNode.create_ListNode(input_str)
-        elif TreeNode.__name__ in name:
-            return TreeNode.create_tree(input_str)
+            if ListNode.__name__ in name:
+                return ListNode.create_ListNode(input_str)
+            elif TreeNode.__name__ in name:
+                return TreeNode.create_tree(input_str)
 
-        for x in input_str:
-            if ParseInput.is_ignore_str(x): continue
-            try:
-                v = None
-                if name == int.__name__:
-                    v = int(x)
-                elif name == str.__name__:
-                    v = str(x)
-                elif name == bool.__name__:
-                    v = bool(x)
-                elif name == float.__name__:
-                    v = float(x)
-                else:
-                    print("unknown type", name)
-                if v != None:
-                    ans.append(v)
-            except:
-                pass
-        return ans
-
-    @staticmethod
-    def parse_two_type_array_list(input_str, type_name=None):
-        return [ParseInput.parse_one_type_array_list(inputs, type_name) for inputs in input_str if inputs]
-
-    @staticmethod
-    def parse_three_type_array_list(input_str, type_name=None):
-        return [ParseInput.parse_two_type_array_list(inputs, type_name) for inputs in input_str if inputs]
+            for x in input_str:
+                if ParseInput.is_ignore_str(x): continue
+                try:
+                    v = None
+                    if name == int.__name__:
+                        v = int(x)
+                    elif name == str.__name__:
+                        v = str(x)
+                    elif name == bool.__name__:
+                        v = bool(x)
+                    elif name == float.__name__:
+                        v = float(x)
+                    else:
+                        print("unknown type", name)
+                    if v != None:
+                        ans.append(v)
+                except:
+                    pass
+            return ans
+        else:
+            return [ParseInput.parse_one_type_array_list(deep - 1, cur_str, name) for cur_str in input_str]
 
 
 ##################################################################################################
@@ -404,26 +415,38 @@ def parse_lc_type(**args):
     '''
     args_type = args['args_type']
     args_input = args['args_input']
+    origin_type_name = args_type
+    type_name = ParseInput.ignore_optional_or_type(str(args_type))
     if args_type is None:
         return args_input
-    type_name = str(args_type)
-    if type_name == "<class 'str'>":
+    if type_name == "str":
         return args_input
-    elif type_name == "<class 'int'>":
+    elif type_name == "int" or type_name == 'int':
         return int(args_input)
-    elif type_name == "<class 'bool'>":
+    elif type_name == "bool" or type_name == "bool":
         return bool(args_input)
-    elif type_name == "<class 'float'>":
+    elif type_name == "float" or type_name == "float":
         return float(args_input)
-    elif type_name.find("typing.List") != -1:
-        typing_cnt = type_name.count('typing.List')
-        if re.match(ParseInput.build_match(typing_cnt), type_name):
-            return ParseInput.parse_list(typing_cnt, args_input, type_name)
-    elif type_name.find("typing.Optional") != -1:
-        typing_cnt = type_name.count('typing.Optional')
-        if re.match(ParseInput.build_match(typing_cnt, s='generator.index.TreeNode', left=LEFT_OPTIONAL_RE),
-                    type_name):
-            return ParseInput.parse_list(typing_cnt, args_input, type_name)
+    # 注释部分由下面替代 type_name.find("[") != -1
+    # elif type_name.find("typing.List") != -1:
+    #     typing_cnt = type_name.count('typing.List')
+    #     if re.match(ParseInput.build_match(typing_cnt), type_name):
+    #         return ParseInput.parse_list(typing_cnt, args_input, type_name)
+    # elif type_name.find("typing.Optional") != -1:
+    #     typing_cnt = type_name.count('typing.Optional')
+    #     if re.match(ParseInput.build_match(typing_cnt, s=TREE_NODE_STR, left=LEFT_OPTIONAL_RE),
+    #                 type_name):
+    #         return ParseInput.parse_list(typing_cnt, args_input, type_name)
+    elif type_name.find("[") != -1:
+        # 这部分兼容上面处理方式
+        # 这部分作旧版本兼容处理 => List[List[int]]
+        is_tree_or_list_node = ListNode.__name__ in type_name or TreeNode.__name__ in type_name
+        if is_tree_or_list_node:
+            # 处理多级[二叉树|链表]列表
+            # +1 二叉树本身就是一个列表
+            return ParseInput.parse_list(type_name.count("[") + 1, args_input, type_name)
+        else:
+            return ParseInput.parse_list(type_name.count("["), args_input, type_name)
     elif ListNode.__name__ in type_name or TreeNode.__name__ in type_name:
         return ParseInput.parse_list(1, args_input, type_name)
     raise BaseException("not implements:" + type_name)
@@ -435,6 +458,39 @@ class BaseUtil:
         # 是否是基本类型
         bases = [int.__name__, bool.__name__, float.__name__]
         return type_name in bases
+
+    @staticmethod
+    def handler_list_or_node(deep, return_type_name, return_result, return_except):
+        '''
+        递归处理各级列表
+        :param return_type_name: 类型名
+        :param return_result: 返回结果
+        :param return_except: 预期结果
+        :param return_result: 全部相等
+        :param deep: 深度
+        :return:
+        '''
+        if deep == 0:
+            return return_result == return_except
+        elif deep == 1:
+            if ListNode.__name__ in return_type_name:
+                return ListNode.deepEqual(return_result, return_except)
+            elif TreeNode.__name__ in return_type_name:
+                return TreeNode.deepEqual(return_result, return_except)
+            else:
+                return BaseUtil.handler_list_or_node(0, return_result, return_except)
+        else:
+            try:
+                if len(return_result) == len(return_except):
+                    return all(
+                        BaseUtil.handler_list_or_node(deep - 1, return_result_node, return_except_node) for
+                        return_result_node, return_except_node
+                        in
+                        zip(return_result, return_except))
+                else:
+                    return False
+            except:
+                return BaseUtil.handler_list_or_node(deep, return_result, return_except)
 
 
 def parse_lc_input(**args):
@@ -510,16 +566,15 @@ def leetcode_run(**kwargs):
                     ListNode.__name__ in return_type_name)
             if return_type is not None:
                 is_ok = False
+                deep = return_type_name.count('[')
                 if contains_tree_node_list_node:
-                    # 如果遇到列表形式的二叉树只能暂时不做考虑
-                    if ListNode.__name__ in return_type_name:
-                        # if  return_type_name == ParseInput.build_match_type(1, LIST_NODE_STR, left=LEFT_OPTIONAL):
-                        is_ok = ListNode.deepEqual(return_result, return_except)
-                    else:
-                        # if  return_type_name == ParseInput.build_match_type(1, TREE_NODE_STR, left=LEFT_OPTIONAL):
-                        is_ok = TreeNode.deepEqual(return_result, return_except)
+                    is_ok = BaseUtil.handler_list_or_node(deep=deep + 1, return_type_name=return_type_name,
+                                                          return_result=return_result, return_except=return_except)
                 else:
                     is_ok = return_result == return_except
+                    if not is_ok and deep > 0:
+                        is_ok = BaseUtil.handler_list_or_node(deep=deep, return_type_name=return_type_name,
+                                                              return_result=return_result, return_except=return_except)
                 compare_result.append((is_ok, return_result, return_except))
                 if not is_ok:
                     print('result:', return_result if return_result != '' else '\"\"')

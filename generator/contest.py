@@ -5,7 +5,7 @@ import time
 
 import requests
 
-from generator.generator_template import generator_template,TEST_CASE_DIR
+from generator.generator_template import generator_template, TEST_CASE_DIR
 from generator.parse_test_case import parse_case
 
 applicationJSON = "application/json"
@@ -22,7 +22,7 @@ LC_CLASS_THEME_PREFIX = LC_PREFIX + "/classic/problems"
 
 
 def get_header():
-    cookie_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),"../cookie.txt")
+    cookie_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../cookie.txt")
     # print(cookie_file_path)
     try:
         if not os.path.exists(cookie_file_path):
@@ -108,14 +108,16 @@ def contestQuestion(contestSlug, questionSlug):
         return {}
 
 
-def handler_question_info(question_info='', name='', dir_prefix='', username='', access_url=''):
+def handler_question_info(question_info={}, name='', dir_prefix='', username='', access_url=''):
+    if question_info is None:
+        question_info = {}
     try:
         code = ''
         if "codeSnippets" not in question_info:
             raise Exception("解析失败！请检查cookie是否过期!!!")
 
         for s in question_info['codeSnippets']:
-            if s['lang'] == 'Python3':
+            if "lang" in s and s['lang'] == 'Python3':
                 code = s['code']
                 break
         example = ''
@@ -135,7 +137,7 @@ def handler_question_info(question_info='', name='', dir_prefix='', username='',
         if "Please switch to Chinese" in question_info['content']:
             print(question_info)
             if "translatedContent" in question_info:
-                content = question_info['translatedContent']
+                content = question_info["translatedContent"]
                 is_ZH = True
 
         # 解析案例
@@ -145,7 +147,8 @@ def handler_question_info(question_info='', name='', dir_prefix='', username='',
             pass
         if code:
             generator_template(code=code, py_file=dir_prefix + f"\\{name}.py",
-                               input_file=dir_prefix + f"\\{TEST_CASE_DIR}\\{name}.txt", test_case=test_case, username=username,
+                               input_file=dir_prefix + f"\\{TEST_CASE_DIR}\\{name}.txt", test_case=test_case,
+                               username=username,
                                access_url=access_url)
     except Exception as e:
         print(e)
@@ -266,7 +269,8 @@ def get_no_contest(contest_no, contest_title_slug):
             except Exception as e:
                 print(e)
             index += 1
-        print('----------------------------------解析完毕，如果有案例解析失败，请自行复制案例----------------------------------')
+        print(
+            '----------------------------------解析完毕，如果有案例解析失败，请自行复制案例----------------------------------')
     except Exception as e:
         print(e)
 
