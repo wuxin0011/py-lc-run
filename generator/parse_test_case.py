@@ -37,7 +37,7 @@ def replace(s: str):
     s = s.replace(':', '')
     s = s.replace('：', '')
     s = s.replace(';', '')
-    return s
+    return s if s else " "
 
 
 def handler_input_example(s='', is_example_test_case=False, is_ZH=False):
@@ -163,10 +163,10 @@ def parse_case(html_str, exampleTestcaseList, is_example_test_case=False, is_ZH=
         j = 0
         for i in range(n):
             k += 1
-            all_test_cases.append(handler_input[i])
+            all_test_cases.append(replace(handler_input[i]))
             all_test_cases.append("\n")
             if group == k:
-                all_test_cases.append(outputs[j])
+                all_test_cases.append(replace(outputs[j]))
                 if i != n - 1:
                     all_test_cases.append("\n\n")
                 k = 0
