@@ -20,8 +20,7 @@ RIGHT_List_RE = '\]'
 MATCH_TYPE = f'str|int|bool|float|{TREE_NODE_STR}|{LIST_NODE_STR}'
 
 
-
-def testcase(test=-1, start= 1, end=0x3ffffff, use=True):
+def testcase(test=-1, start=1, end=0x3ffffff, use=True):
     '''
     参数说明
     :param use: 是否启用这个优先级最高默认启用 如果 False 表示这个包装器失效
@@ -491,27 +490,26 @@ class BaseUtil:
         :param deep: 深度
         :return:
         '''
-        if deep == 0:
-            return return_result == return_except
-        elif deep == 1:
-            if ListNode.__name__ in return_type_name:
-                return ListNode.deepEqual(return_result, return_except)
-            elif TreeNode.__name__ in return_type_name:
-                return TreeNode.deepEqual(return_result, return_except)
-            else:
-                return BaseUtil.handler_list_or_node(0, return_result, return_except)
-        else:
-            try:
-                if len(return_result) == len(return_except):
-                    return all(
-                        BaseUtil.handler_list_or_node(deep - 1, return_result_node, return_except_node) for
-                        return_result_node, return_except_node
-                        in
-                        zip(return_result, return_except))
-                else:
+        if return_result == return_except:
+            return True
+
+        if deep >= 1:
+            if "List" in return_type_name:
+                try:
+                    if len(return_result) == len(return_except):
+                        return all(BaseUtil.handler_list_or_node(deep - 1, return_type_name, return_result_node,
+                                                                 return_except_node) for
+                                   return_result_node, return_except_node in zip(return_result, return_except))
+                    else:
+                        return False
+                except:
                     return False
-            except:
-                return BaseUtil.handler_list_or_node(deep, return_result, return_except)
+            else:
+                if ListNode.__name__ in return_type_name:
+                    return ListNode.deepEqual(return_result, return_except)
+                elif TreeNode.__name__ in return_type_name:
+                    return TreeNode.deepEqual(return_result, return_except)
+        return False
 
 
 def parse_lc_input(**args):
@@ -584,7 +582,8 @@ def leetcode_run(**kwargs):
             return_except = parse_lc_type(args_input=inputs[i], args_type=return_type)
 
             if test_case_use:
-                if test_case_test != -1 and compare_time != test_case_test or (test_case_test == -1 and (compare_time > test_case_end or compare_time < test_case_start)):
+                if test_case_test != -1 and compare_time != test_case_test or (
+                        test_case_test == -1 and (compare_time > test_case_end or compare_time < test_case_start)):
                     i += 1
                     compare_time += 1
                     if (test_case_test != -1 and compare_time > test_case_test) or compare_time > test_case_end:
@@ -597,7 +596,7 @@ def leetcode_run(**kwargs):
             return_result = solution(*params)
 
             # 处理返回值
-            return_type_name = str(return_type)
+            return_type_name = ParseInput.ignore_optional_or_type(str(return_type))
             contains_tree_node_list_node = (TreeNode.__name__ in return_type_name) or (
                     ListNode.__name__ in return_type_name)
             if return_type is not None:
