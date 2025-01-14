@@ -4,6 +4,8 @@ import typing
 from collections import deque
 
 from generator.generator_template import CONSTRUCTOR_FLAG
+from generator.parse_test_case import replace
+
 
 GENER_INDEX_STR = 'generator.index.'
 TREE_NODE_STR = 'generator.index.TreeNode'
@@ -243,6 +245,7 @@ class ParseInput:
     @staticmethod
     def parse_list(deep, input_str, type_name):
         # print(deep, input_str, type_name)
+
         input_str = ParseInput.parse_list_str(deep, input_str, type_name)
         only_name = ''
         if ListNode.__name__ in type_name or TreeNode.__name__ in type_name:
@@ -434,7 +437,8 @@ def parse_lc_type(**args):
     :return:
     '''
     args_type = args['args_type']
-    args_input = args['args_input']
+    args_input = replace(args['args_input'])
+
     origin_type_name = args_type
     type_name = ParseInput.ignore_optional_or_type(str(args_type))
     if args_type is None:
