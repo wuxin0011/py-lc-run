@@ -1,6 +1,16 @@
-## 使用条件
+
+
+## 效果预览
+
+![dir](./dir.png)
+
+
+
+## 使用前提
 
 ### 1、 安装依赖库
+
+python >= 3.7
 
 ```commandline
 pip install beautifulsoup4
@@ -85,6 +95,10 @@ if __name__ == '__main__':
 ```
 
 上面模板均自动生成，如果需要指定模板 请访问[这个文件](./generator/generator_template.py) 根据自己喜好修改 
+
+
+
+
 
 
 
