@@ -571,12 +571,12 @@ def leetcode_run(**kwargs):
             # 解析入参
             for arg in args_types:
                 # 必须读入结果 输入结果不能为空
-                while inputs[i] is None or len(inputs[i]) == 0: i += 1
+                while ParseInput.is_ignore_str(inputs[i]): i += 1
                 # 解析参数结果放入
                 params.append(parse_lc_type(args_input=inputs[i], args_type=arg))
                 i += 1
             # 不能输入None
-            while inputs[i] is None or len(inputs[i]) == 0: i += 1
+            while ParseInput.is_ignore_str(inputs[i]): i += 1
             # 希望返回的结果
             return_except = parse_lc_type(args_input=inputs[i], args_type=return_type)
 
