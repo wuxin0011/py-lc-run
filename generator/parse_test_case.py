@@ -26,6 +26,7 @@ def replace(s: str):
     s = s.replace('<br>', '').replace('</br>', '')
     s = s.replace('<h>', '').replace('</h>', '')
     s = s.replace('<code>', '').replace('</code>', '')
+    s = s.replace('<pre>', '').replace('</pre>', '')
     s = s.replace('\n', '')
     s = s.replace('\\n', '')
     s = s.replace('\\\"', '')
@@ -109,37 +110,39 @@ def parse_case_new(html, is_ZH=False):
     explain_str_flag = ZH_EXPLAIN_FLAG if is_ZH else EN_EXPLAIN_FLAG
     try:
         soup = BeautifulSoup(html, 'lxml')
-        divs = soup.select('[class="example-block"]')
         outputs = []
-        if divs:
-            for element in divs:
-                if not element: continue
-                tags = element.select('[class="example-io"]')
-                if tags:
-                    outputs.append(replace(tags[-1].text))
+        flag_start = "<pre>"
+        flag_end = "</pre>"
+        start_cnt = html.count(flag_start)
+        end_cnt = html.count(flag_end)
+        if start_cnt == end_cnt and end_cnt > 0:
+            pres = soup.select('pre')
+            for pre in pres:
+                i = pre.text.find(out_str_flag)
+                j = pre.text.find(explain_str_flag)
+                if i != -1:
+                    if j != -1 and i < j:
+                        outputs.append(replace(pre.text[i + len(out_str_flag):j]))
+                    else:
+                        outputs.append(replace(pre.text[i + len(out_str_flag):]))
                 else:
-                    tags = element.select('[class="example"]')
+                    outputs.append(ERROR_TEST_CASE_FLAG)
+        else:
+            divs = soup.select('[class="example-block"]')
+            if divs:
+                for element in divs:
+                    if not element: continue
+                    tags = element.select('[class="example-io"]')
                     if tags:
                         outputs.append(replace(tags[-1].text))
                     else:
-                        outputs.append(ERROR_TEST_CASE_FLAG)
-        else:
-            flag_start = "<pre>"
-            flag_end = "</pre>"
-            start_cnt = html.count(flag_start)
-            end_cnt = html.count(flag_end)
-            if start_cnt == end_cnt and end_cnt > 0:
-                pres = soup.select('pre')
-                for pre in pres:
-                    i = pre.text.find(out_str_flag)
-                    j = pre.text.find(explain_str_flag)
-                    if i != -1:
-                        if j != -1 and i < j:
-                            outputs.append(replace(pre.text[i + len(out_str_flag):j]))
+                        tags = element.select('[class="example"]')
+                        if tags:
+                            outputs.append(replace(tags[-1].text))
                         else:
-                            outputs.append(replace(pre.text[i + len(explain_str_flag):]))
-                    else:
-                        outputs.append(ERROR_TEST_CASE_FLAG)
+                            outputs.append(ERROR_TEST_CASE_FLAG)
+            else:
+                pass
 
         return outputs
     except Exception as e:
@@ -157,8 +160,8 @@ def parse_case(html_str, exampleTestcaseList, is_example_test_case=False, is_ZH=
             outputs = parse_case_new(html_str[:], is_ZH)
             out_len = len(outputs)
             if out_len == 0 or n % out_len != 0:
-                print('案例解析失败！请手动复制案例！')
-                return ''
+                print('案例解析失败！请手动copy😥')
+                return '\n'.join(handler_input)
         group = n // out_len
         k = 0
         j = 0
