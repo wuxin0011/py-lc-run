@@ -96,17 +96,7 @@ def parse_case_old(html_Str: str, is_ZH=False):
             j = html_Str.find(out_str_flag)
             k = html_Str.find(explain_str_flag)
     elif in_cnt == out_cnt and out_cnt > 0:
-        flag_start = "<pre>"
-        flag_end = "</pre>"
-        start_cnt = html_Str.count(flag_start)
-        end_cnt = html_Str.count(flag_start)
-        if start_cnt == end_cnt and end_cnt > 0:
-            starts_idx = []
-            ends_idx = []
-
-        else:
-            pass
-
+        pass
     else:
         pass
     return out_puts
@@ -157,6 +147,7 @@ def parse_case_new(html, is_ZH=False):
 
 
 def parse_case(html_str, exampleTestcaseList, is_example_test_case=False, is_ZH=False):
+    all_test_cases = []
     try:
         handler_input = handler_input_example(exampleTestcaseList, is_example_test_case, is_ZH)
         outputs = parse_case_old(html_str[:], is_ZH)
@@ -168,7 +159,6 @@ def parse_case(html_str, exampleTestcaseList, is_example_test_case=False, is_ZH=
             if out_len == 0 or n % out_len != 0:
                 print('案例解析失败！请手动复制案例！')
                 return ''
-        all_test_cases = []
         group = n // out_len
         k = 0
         j = 0
@@ -180,12 +170,12 @@ def parse_case(html_str, exampleTestcaseList, is_example_test_case=False, is_ZH=
                 all_test_cases.append(replace(outputs[j]))
                 if i != n - 1:
                     all_test_cases.append("\n\n")
+                if outputs[j].find(ERROR_TEST_CASE_FLAG) != -1:
+                    print(f'第 {j + 1} 案例解析错误 请手动copy😥')
                 k = 0
                 j += 1
-                if outputs[j].find(ERROR_TEST_CASE_FLAG) != -1:
-                    print(f'第 {j} 案例解析错误 请手动copy😥')
 
         return ''.join(all_test_cases)
     except Exception as e:
         print(f"案例解析错误: {e}")
-        return ''
+        return ''.join(all_test_cases)
