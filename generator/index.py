@@ -140,11 +140,6 @@ class ListNode:
             return self.val == other.val
         return False
 
-    class ListNode:
-        def __init__(self, val=0, next=None):
-            self.val = val
-            self.next = next
-
     @staticmethod
     def deepEqual(result, expect):
         if result is expect:

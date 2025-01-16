@@ -4,6 +4,7 @@ ZH_EXPLAIN_FLAG = '解释'
 EN_INPUT_FLAG = 'Input'
 EN_OUTPUT_FLAG = 'Output'
 EN_EXPLAIN_FLAG = 'Explanation'
+ERROR_TEST_CASE_FLAG = 'this_case_parse_error'
 
 
 def replace(s: str):
@@ -113,6 +114,9 @@ def parse_case_old(html_Str: str, is_ZH=False):
 
 def parse_case_new(html, is_ZH=False):
     from bs4 import BeautifulSoup
+    input_str_flag = ZH_INPUT_FLAG if is_ZH else EN_INPUT_FLAG
+    out_str_flag = ZH_OUTPUT_FLAG if is_ZH else EN_OUTPUT_FLAG
+    explain_str_flag = ZH_EXPLAIN_FLAG if is_ZH else EN_EXPLAIN_FLAG
     try:
         soup = BeautifulSoup(html, 'lxml')
         divs = soup.select('[class="example-block"]')
@@ -127,6 +131,8 @@ def parse_case_new(html, is_ZH=False):
                     tags = element.select('[class="example"]')
                     if tags:
                         outputs.append(replace(tags[-1].text))
+                    else:
+                        outputs.append(ERROR_TEST_CASE_FLAG)
         else:
             flag_start = "<pre>"
             flag_end = "</pre>"
@@ -135,10 +141,15 @@ def parse_case_new(html, is_ZH=False):
             if start_cnt == end_cnt and end_cnt > 0:
                 pres = soup.select('pre')
                 for pre in pres:
-                    # print(pre.text)
-                    i = pre.text.find(EN_OUTPUT_FLAG)
+                    i = pre.text.find(out_str_flag)
+                    j = pre.text.find(explain_str_flag)
                     if i != -1:
-                        outputs.append(replace(pre.text[i + len(EN_OUTPUT_FLAG):]))
+                        if j != -1 and i < j:
+                            outputs.append(replace(pre.text[i + len(out_str_flag):j]))
+                        else:
+                            outputs.append(replace(pre.text[i + len(explain_str_flag):]))
+                    else:
+                        outputs.append(ERROR_TEST_CASE_FLAG)
 
         return outputs
     except Exception as e:
@@ -171,6 +182,9 @@ def parse_case(html_str, exampleTestcaseList, is_example_test_case=False, is_ZH=
                     all_test_cases.append("\n\n")
                 k = 0
                 j += 1
+                if outputs[j].find(ERROR_TEST_CASE_FLAG) != -1:
+                    print(f'第 {j} 案例解析错误 请手动copy😥')
+
         return ''.join(all_test_cases)
     except Exception as e:
         print(f"案例解析错误: {e}")
