@@ -135,7 +135,7 @@ def handler_question_info(question_info={}, name='', dir_prefix='', username='',
         content = question_info['content']
         is_ZH = False
         if "Please switch to Chinese" in question_info['content']:
-            print(question_info)
+            # print(question_info)
             if "translatedContent" in question_info:
                 content = question_info["translatedContent"]
                 is_ZH = True

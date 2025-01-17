@@ -1,9 +1,11 @@
 ZH_INPUT_FLAG = '输入'
 ZH_OUTPUT_FLAG = '输出'
 ZH_EXPLAIN_FLAG = '解释'
+ZH_TIP_FLAG = '提示'
 EN_INPUT_FLAG = 'Input'
 EN_OUTPUT_FLAG = 'Output'
 EN_EXPLAIN_FLAG = 'Explanation'
+EN_TIP_FLAG = 'tips'
 ERROR_TEST_CASE_FLAG = 'this_case_parse_error'
 
 
@@ -11,9 +13,12 @@ def replace(s: str):
     s = s.replace(ZH_INPUT_FLAG, '')
     s = s.replace(ZH_OUTPUT_FLAG, '')
     s = s.replace(ZH_EXPLAIN_FLAG, '')
+    s = s.replace(ZH_TIP_FLAG, '')
     s = s.replace(EN_INPUT_FLAG, '')
     s = s.replace(EN_OUTPUT_FLAG, '')
     s = s.replace(EN_EXPLAIN_FLAG, '')
+    s = s.replace(EN_EXPLAIN_FLAG, '')
+    s = s.replace(EN_TIP_FLAG, '')
     s = s.replace('<span class="example-io">', '')
     s = s.replace('<span class="example-block">', '')
     s = s.replace('<span class="example">', '')
@@ -88,7 +93,7 @@ def parse_case_old(html_Str: str, is_ZH=False):
     explain_cnt = html_Str.count(explain_str_flag)
 
     out_puts = []
-    if out_cnt == explain_cnt and explain_cnt > 0:
+    if out_cnt == explain_cnt and explain_cnt != 0:
         j = html_Str.find(out_str_flag)
         k = html_Str.find(explain_str_flag)
         while 0 < j < k:
@@ -108,6 +113,7 @@ def parse_case_new(html, is_ZH=False):
     input_str_flag = ZH_INPUT_FLAG if is_ZH else EN_INPUT_FLAG
     out_str_flag = ZH_OUTPUT_FLAG if is_ZH else EN_OUTPUT_FLAG
     explain_str_flag = ZH_EXPLAIN_FLAG if is_ZH else EN_EXPLAIN_FLAG
+    tip_str_flag = ZH_TIP_FLAG if is_ZH else EN_TIP_FLAG
     try:
         soup = BeautifulSoup(html, 'lxml')
         outputs = []
@@ -142,7 +148,30 @@ def parse_case_new(html, is_ZH=False):
                         else:
                             outputs.append(ERROR_TEST_CASE_FLAG)
             else:
-                pass
+                # 最后的兼容
+                in_cnt = html.count(input_str_flag)
+                out_cnt = html.count(out_str_flag)
+                explain_cnt = html.count(explain_str_flag)
+                if out_cnt != 0:
+                    j = html.find(out_str_flag)
+                    k = html.find(explain_str_flag)
+                    while 0 < j < k:
+                        outputs.append(replace(html[j + len(out_str_flag):k]))
+                        html = html[k + len(explain_str_flag):]
+                        j = html.find(out_str_flag)
+                        k = html.find(explain_str_flag)
+                    if explain_cnt > 0 and explain_cnt != out_cnt and html.find(explain_str_flag) == -1 and html.find(
+                            tip_str_flag) != -1:
+                        j = html.find(out_str_flag)
+                        k = html.find(tip_str_flag)
+                        while 0 < j < k:
+                            for x in range(4, -1, -1):
+                                if k - x < j: continue
+                                outputs.append(replace(html[j + len(out_str_flag):k - x]))
+                                html = html[k + len(tip_str_flag):]
+                                j = html.find(out_str_flag)
+                                k = html.find(tip_str_flag)
+                                break
 
         return outputs
     except Exception as e:
