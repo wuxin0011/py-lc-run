@@ -83,30 +83,6 @@ def handler_input_example(s='', is_example_test_case=False, is_ZH=False):
     return input_example
 
 
-def parse_case_old(html_Str: str, is_ZH=False):
-    input_str_flag = ZH_INPUT_FLAG if is_ZH else EN_INPUT_FLAG
-    out_str_flag = ZH_OUTPUT_FLAG if is_ZH else EN_OUTPUT_FLAG
-    explain_str_flag = ZH_EXPLAIN_FLAG if is_ZH else EN_EXPLAIN_FLAG
-
-    in_cnt = html_Str.count(input_str_flag)
-    out_cnt = html_Str.count(out_str_flag)
-    explain_cnt = html_Str.count(explain_str_flag)
-
-    out_puts = []
-    if out_cnt == explain_cnt and explain_cnt != 0:
-        j = html_Str.find(out_str_flag)
-        k = html_Str.find(explain_str_flag)
-        while 0 < j < k:
-            out_puts.append(replace(html_Str[j + len(out_str_flag):k]))
-            html_Str = html_Str[k + len(explain_str_flag):]
-            j = html_Str.find(out_str_flag)
-            k = html_Str.find(explain_str_flag)
-    elif in_cnt == out_cnt and out_cnt > 0:
-        pass
-    else:
-        pass
-    return out_puts
-
 
 def parse_case_new(html, is_ZH=False):
     from bs4 import BeautifulSoup
@@ -182,15 +158,12 @@ def parse_case(html_str, exampleTestcaseList, is_example_test_case=False, is_ZH=
     all_test_cases = []
     try:
         handler_input = handler_input_example(exampleTestcaseList, is_example_test_case, is_ZH)
-        outputs = parse_case_old(html_str[:], is_ZH)
+        outputs = parse_case_new(html_str[:], is_ZH)
         out_len = len(outputs)
         n = len(handler_input)
         if out_len == 0 or n % out_len != 0:
-            outputs = parse_case_new(html_str[:], is_ZH)
-            out_len = len(outputs)
-            if out_len == 0 or n % out_len != 0:
-                print('案例解析失败！请手动copy😥')
-                return '\n'.join(handler_input)
+            print('案例解析失败！请手动copy😥')
+            return '\n'.join(handler_input)
         group = n // out_len
         k = 0
         j = 0
