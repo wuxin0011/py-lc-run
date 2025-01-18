@@ -9,7 +9,7 @@ EN_TIP_FLAG = 'tips'
 ERROR_TEST_CASE_FLAG = 'this_case_parse_error'
 
 
-def replace(s: str):
+def replace(s: str,newLine = True):
     s = s.replace(ZH_INPUT_FLAG, '')
     s = s.replace(ZH_OUTPUT_FLAG, '')
     s = s.replace(ZH_EXPLAIN_FLAG, '')
@@ -32,7 +32,8 @@ def replace(s: str):
     s = s.replace('<h>', '').replace('</h>', '')
     s = s.replace('<code>', '').replace('</code>', '')
     s = s.replace('<pre>', '').replace('</pre>', '')
-    s = s.replace('\n', '')
+    if newLine:
+        s = s.replace('\n', '')
     s = s.replace('\\n', '')
     s = s.replace('\\\"', '')
     s = s.replace('\"', '')
@@ -169,10 +170,10 @@ def parse_case(html_str, exampleTestcaseList, is_example_test_case=False, is_ZH=
         j = 0
         for i in range(n):
             k += 1
-            all_test_cases.append(replace(handler_input[i]))
+            all_test_cases.append(replace(handler_input[i],False))
             all_test_cases.append("\n")
             if group == k:
-                all_test_cases.append(replace(outputs[j]))
+                all_test_cases.append(replace(outputs[j],False))
                 if i != n - 1:
                     all_test_cases.append("\n\n")
                 if outputs[j].find(ERROR_TEST_CASE_FLAG) != -1:

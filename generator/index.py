@@ -6,7 +6,6 @@ from collections import deque
 from generator.generator_template import CONSTRUCTOR_FLAG
 from generator.parse_test_case import replace
 
-
 GENER_INDEX_STR = 'generator.index.'
 TREE_NODE_STR = 'generator.index.TreeNode'
 LIST_NODE_STR = 'generator.index.ListNode'
@@ -460,12 +459,7 @@ def parse_lc_type(**args):
         # 这部分兼容上面处理方式
         # 这部分作旧版本兼容处理 => List[List[int]]
         is_tree_or_list_node = ListNode.__name__ in type_name or TreeNode.__name__ in type_name
-        if is_tree_or_list_node:
-            # 处理多级[二叉树|链表]列表
-            # +1 二叉树本身就是一个列表
-            return ParseInput.parse_list(type_name.count("[") + 1, args_input, type_name)
-        else:
-            return ParseInput.parse_list(type_name.count("["), args_input, type_name)
+        return ParseInput.parse_list(type_name.count("[") + int(is_tree_or_list_node), args_input, type_name)
     elif ListNode.__name__ in type_name or TreeNode.__name__ in type_name:
         return ParseInput.parse_list(1, args_input, type_name)
     raise BaseException("not implements:" + type_name)

@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import re
 import time
@@ -323,16 +324,16 @@ def create_next_contest():
     if cur_info['diff_day'] > 0:
         print('\n距离最近比赛', cur_info['title'], '还有', cur_info['diff_day'], '天!')
     else:
-        minute = (cur_info['diff_time'] / (60 * 60 * 24) - cur_info['diff_time'] // (60 * 60 * 24)) * 24 * 60
+        minute = math.ceil((cur_info['diff_time'] / (60 * 60 * 24) - cur_info['diff_time'] // (60 * 60 * 24)) * 24 * 60)
         if minute <= 60:
             for t in range(1, minute + 1):
                 # 一分钟休眠一次
+                print(f"距离{cur_info['title']}开始还剩:{(minute - t)}分钟 请等待 ！")
                 time.sleep(60 * 1)
-                print(f"距离比赛开始还剩:{(minute - t)}分钟 请等待 ！")
-            time.sleep(10)
+            time.sleep(5)
             get_no_contest(cur_info['contest_no'], cur_info['titleSlug'])
         else:
-            print(f"距离比赛开始还剩:{minute}分钟 请在一个小时内等待 ！")
+            print(f"距离 {cur_info['title']} 开始还剩:{minute}分钟 请在一个小时内等待 ！")
 
     # print((cur_info['diff_time'] / (60 * 60 * 24) - cur_info['diff_time'] // (60 * 60 * 24)) * 24 * 60)
 
@@ -352,10 +353,15 @@ def create_contest_by_contest_id(is_bi_week=False):
             if not ok:
                 cur_info = info
                 break
-
     contest_max_no = cur_info['contest_no']
+    minute = math.ceil((cur_info['diff_time'] / (60 * 60 * 24) - cur_info['diff_time'] // (60 * 60 * 24)) * 24 * 60)
+    if minute > 0:
+        contest_max_no -= 1
     cur_id = 0
-    print('当前类型比赛最大序号:', contest_max_no)
+    if cur_info['diff_day'] == 0:
+        print(f'当前类型比赛最大序号:{contest_max_no}, 距离{cur_info["title"]} 还剩下 {minute} 分钟')
+    else:
+        print(f'当前类型比赛最大序号:{contest_max_no}, 距离{cur_info["title"]} 还剩下 {cur_info["diff_day"]} 天')
     while True:
         contest_id = input(f'请输入{cur_text}周赛序号 (exit退出):\n')
         if contest_id.lower() == 'exit':
