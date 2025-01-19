@@ -241,11 +241,15 @@ def parse_problem_by_urls(pre_dir=''):
 def get_no_contest(contest_no, contest_title_slug):
     is_bi_week = 'biweekly-contest' in contest_title_slug
     dir_name = 'biweek' if is_bi_week else 'week'
-    dir_prefix = os.path.join(os.getcwd(), dir_name, contest_no)
+    dir_prefix = os.path.join(os.getcwd(), str(dir_name), str(contest_no))
     try:
         res = custom_url_response(url=f'{API_PREFIX}{contest_title_slug}/', method='GET')
         if res.status_code != 200:
             print('请求失败')
+            return
+        index = 0
+        if not res.text or "questions" not in json.loads(res.text) or len(json.loads(res.text)['questions']) == 0:
+            print('请确保周赛存在或者检查cookie是否过期')
             return
         username = get_user_name()
         if username is not None:
@@ -254,8 +258,7 @@ def get_no_contest(contest_no, contest_title_slug):
             print(f'第 {contest_no} 场双周赛即将开始!\n')
         else:
             print(f'第 {contest_no} 场周赛即将开始!\n')
-        index = 0
-        # print(res.text)
+
         for question in json.loads(res.text)['questions']:
             try:
                 title_slug = question['title_slug']
@@ -295,6 +298,8 @@ def get_next_contest_info():
                 contest_info['contest_no'] = int(re.search('\\d+', cur_data['titleSlug']).group(0))
                 contest_info['diff_day'] = int(diff_time / (60 * 60 * 24))
                 contest_info['diff_time'] = diff_time
+                contest_info['diff_minute'] = math.ceil(
+                    (diff_time / (60 * 60 * 24) - diff_time // (60 * 60 * 24)) * 24 * 60)
                 # contest_info['origin'] = cur_data
                 infos.append(contest_info)
         else:
@@ -320,17 +325,15 @@ def create_next_contest():
     if len(cur_info) == 0:
         print(f'未获取到任何比赛信息 请到官方地址查看 {LC_PREFIX}/contest/')
         return
-    # print(cur_info)
     if cur_info['diff_day'] > 0:
         print('\n距离最近比赛', cur_info['title'], '还有', cur_info['diff_day'], '天!')
     else:
-        minute = math.ceil((cur_info['diff_time'] / (60 * 60 * 24) - cur_info['diff_time'] // (60 * 60 * 24)) * 24 * 60)
+        minute = cur_info['diff_minute']
         if minute <= 60:
-            for t in range(1, minute + 1):
-                # 一分钟休眠一次
+            for t in range(0, minute):
                 print(f"距离{cur_info['title']}开始还剩:{(minute - t)}分钟 请等待 ！")
                 time.sleep(60 * 1)
-            time.sleep(5)
+            time.sleep(10)
             get_no_contest(cur_info['contest_no'], cur_info['titleSlug'])
         else:
             print(f"距离 {cur_info['title']} 开始还剩:{minute}分钟 请在一个小时内等待 ！")
@@ -354,9 +357,7 @@ def create_contest_by_contest_id(is_bi_week=False):
                 cur_info = info
                 break
     contest_max_no = cur_info['contest_no']
-    minute = math.ceil((cur_info['diff_time'] / (60 * 60 * 24) - cur_info['diff_time'] // (60 * 60 * 24)) * 24 * 60)
-    if minute > 0:
-        contest_max_no -= 1
+    minute = cur_info['diff_minute']
     cur_id = 0
     if cur_info['diff_day'] == 0:
         print(f'当前类型比赛最大序号:{contest_max_no}, 距离{cur_info["title"]} 还剩下 {minute} 分钟')
@@ -368,7 +369,7 @@ def create_contest_by_contest_id(is_bi_week=False):
             break
         try:
             cur_id = int(contest_id)
-            if cur_id < 0 or cur_id > contest_max_no:
+            if cur_id < 0:
                 print(f'请输入一个大于0并且不能超过当前{cur_text}周赛 ({contest_max_no}) 最大序号')
                 continue
             else:

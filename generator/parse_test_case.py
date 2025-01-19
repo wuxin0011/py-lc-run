@@ -9,7 +9,7 @@ EN_TIP_FLAG = 'tips'
 ERROR_TEST_CASE_FLAG = 'this_case_parse_error'
 
 
-def replace(s: str,newLine = True):
+def replace(s: str, newLine=True):
     s = s.replace(ZH_INPUT_FLAG, '')
     s = s.replace(ZH_OUTPUT_FLAG, '')
     s = s.replace(ZH_EXPLAIN_FLAG, '')
@@ -84,7 +84,6 @@ def handler_input_example(s='', is_example_test_case=False, is_ZH=False):
     return input_example
 
 
-
 def parse_case_new(html, is_ZH=False):
     from bs4 import BeautifulSoup
     input_str_flag = ZH_INPUT_FLAG if is_ZH else EN_INPUT_FLAG
@@ -115,15 +114,25 @@ def parse_case_new(html, is_ZH=False):
             if divs:
                 for element in divs:
                     if not element: continue
-                    tags = element.select('[class="example-io"]')
-                    if tags:
-                        outputs.append(replace(tags[-1].text))
+                    i = element.text.find(out_str_flag)
+                    j = element.text.find(explain_str_flag)
+                    k = element.text.find(tip_str_flag)
+                    if 0 < i < j:
+                        outputs.append(replace(element.text[i + len(out_str_flag):j]))
+                    elif 0 < i < k:
+                        outputs.append(replace(element.text[i + len(out_str_flag):k - 4]))
+                    elif 0 < i and k == -1:
+                        outputs.append(replace(element.text[i + len(out_str_flag)]))
                     else:
-                        tags = element.select('[class="example"]')
+                        tags = element.select('[class="example-io"]')
                         if tags:
                             outputs.append(replace(tags[-1].text))
                         else:
-                            outputs.append(ERROR_TEST_CASE_FLAG)
+                            tags = element.select('[class="example"]')
+                            if tags:
+                                outputs.append(replace(tags[-1].text))
+                            else:
+                                outputs.append(ERROR_TEST_CASE_FLAG)
             else:
                 # 最后的兼容
                 in_cnt = html.count(input_str_flag)
@@ -170,10 +179,10 @@ def parse_case(html_str, exampleTestcaseList, is_example_test_case=False, is_ZH=
         j = 0
         for i in range(n):
             k += 1
-            all_test_cases.append(replace(handler_input[i],False))
+            all_test_cases.append(replace(handler_input[i], False))
             all_test_cases.append("\n")
             if group == k:
-                all_test_cases.append(replace(outputs[j],False))
+                all_test_cases.append(replace(outputs[j], False))
                 if i != n - 1:
                     all_test_cases.append("\n\n")
                 if outputs[j].find(ERROR_TEST_CASE_FLAG) != -1:
