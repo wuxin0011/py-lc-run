@@ -442,7 +442,7 @@ def parse_lc_type(**args):
     elif type_name == "int" or type_name == 'int':
         return int(args_input)
     elif type_name == "bool" or type_name == "bool":
-        return bool(args_input)
+        return args_input.lower() == 'true'
     elif type_name == "float" or type_name == "float":
         return float(args_input)
     # 注释部分由下面替代 type_name.find("[") != -1
