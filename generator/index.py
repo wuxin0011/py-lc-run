@@ -407,7 +407,7 @@ class ParseInput:
                     elif name == str.__name__:
                         v = str(x)
                     elif name == bool.__name__:
-                        v = bool(x)
+                        v = x.lower() == 'true'
                     elif name == float.__name__:
                         v = float(x)
                     else:
