@@ -47,16 +47,6 @@ class TreeNode:
         self.left = left
         self.right = right
         self.val = val
-
-    # def __eq__(self, other):
-    #     if self is None and other is None:
-    #         return True
-    #     if other is None:
-    #         return False
-    #     if isinstance(other, TreeNode):
-    #         return self.val == other.val
-    #     return False
-
     @staticmethod
     def create_tree(ls):
         if not ls or len(ls) == 0 or ls[0] is None or TreeNode.is_null_node(ls[0]):
@@ -129,15 +119,6 @@ class ListNode:
     def __init__(self, val=-1, next=None):
         self.next = next
         self.val = val
-
-    def __eq__(self, other):
-        if self is None and other is None:
-            return True
-        if other is None:
-            return False
-        if isinstance(other, ListNode):
-            return self.val == other.val
-        return False
 
     @staticmethod
     def deepEqual(result, expect):
@@ -218,6 +199,129 @@ class ParseInput:
         ans += t
         for _ in range(deep):
             ans += right
+        return ans
+    @staticmethod
+    def remove_outer(temp: str):
+        fi = temp.find('[')
+        la = temp.rfind(']')
+        if fi == -1 or la == -1:
+            return temp
+        return temp[fi + 1:la]
+
+    @staticmethod
+    def handler_constructor_input_test(s: str):
+        ans = []
+        s = ParseInput.remove_outer(s)
+        args = []
+        d = 0
+        cur = ''
+        need_dot = False
+        for c in s:
+            if ParseInput.is_ignore_str(c):
+                continue
+            if c == ',' and d == 0:
+                args = []
+                cur = ''
+                need_dot = True
+                continue
+            if c == '[':
+                d += 1
+                if d == 1:
+                    args = []
+                    cur = ''
+                else:
+                    cur += c
+                need_dot = True
+            elif c == ']':
+                d -= 1
+                if d == 0:
+                    if need_dot:
+                        if cur:
+                            args.append(cur)
+                        ans.append(args)
+                        cur = ''
+                        args = []
+                elif d == 1:
+                    if cur:
+                        args.append(cur)
+                    ans.append(args)
+                    args = []
+                    cur = ''
+                    need_dot = False
+                else:
+                    cur += c
+            elif c == ',':
+                if d == 0:
+                    pass
+                elif d == 1:
+                    args.append(cur)
+                    cur = ''
+                else:
+                    cur += c
+                need_dot = True
+            else:
+                cur += c
+        return ans
+
+    @staticmethod
+    def handler_constructor_input_filter(s: str):
+        s = ParseInput.remove_outer(s)
+        if not s or len(s) == 0:
+            return []
+        args = []
+        d = 0
+        cur = ''
+        for c in s:
+            if ParseInput.is_ignore_str(c):
+                continue
+            if c == '[':
+               d += 1
+               cur += c
+            elif c == ']':
+                d -= 1
+                cur += c
+                if d == 0:
+                    args.append(cur)
+                    cur = ''
+            elif c == ',':
+                if d == 0:
+                    if cur:
+                        args.append(cur)
+                        cur = ''
+                else:
+                    cur += c
+            else:
+                cur += c
+        if cur:
+            args.append(cur)
+        return args
+    @staticmethod
+    def handler_constructor_input(s: str):
+        ans = []
+        s = ParseInput.remove_outer(s)
+        d = 0
+        cur = ''
+        for c in s:
+            if ParseInput.is_ignore_str(c):
+                continue
+            if c == '[':
+                cur += c
+                d += 1
+                if d == 1:
+                    pass
+            elif c == ']':
+                cur += c
+                d -= 1
+                if d == 0:
+                    ans.append(ParseInput.handler_constructor_input_filter(cur))
+                    cur = ''
+            elif c == ',':
+                if cur:
+                    cur += c
+                else:
+                    cur = ''
+            else:
+                cur += c
         return ans
 
     @staticmethod
@@ -432,8 +536,6 @@ def parse_lc_type(**args):
     '''
     args_type = args['args_type']
     args_input = replace(args['args_input'])
-
-    origin_type_name = args_type
     type_name = ParseInput.ignore_optional_or_type(str(args_type))
     if args_type is None:
         return args_input
@@ -445,19 +547,10 @@ def parse_lc_type(**args):
         return args_input.lower() == 'true'
     elif type_name == "float" or type_name == "float":
         return float(args_input)
-    # 注释部分由下面替代 type_name.find("[") != -1
-    # elif type_name.find("typing.List") != -1:
-    #     typing_cnt = type_name.count('typing.List')
-    #     if re.match(ParseInput.build_match(typing_cnt), type_name):
-    #         return ParseInput.parse_list(typing_cnt, args_input, type_name)
-    # elif type_name.find("typing.Optional") != -1:
-    #     typing_cnt = type_name.count('typing.Optional')
-    #     if re.match(ParseInput.build_match(typing_cnt, s=TREE_NODE_STR, left=LEFT_OPTIONAL_RE),
-    #                 type_name):
-    #         return ParseInput.parse_list(typing_cnt, args_input, type_name)
     elif type_name.find("[") != -1:
         # 这部分兼容上面处理方式
         # 这部分作旧版本兼容处理 => List[List[int]]
+
         is_tree_or_list_node = ListNode.__name__ in type_name or TreeNode.__name__ in type_name
         return ParseInput.parse_list(type_name.count("[") + int(is_tree_or_list_node), args_input, type_name)
     elif ListNode.__name__ in type_name or TreeNode.__name__ in type_name:
@@ -514,63 +607,145 @@ def parse_lc_input(**args):
     return [x for x in s if len(x) > 0]
 
 
+def get_arg_type_and_return_type_by_class(__class__, method_name='__init__'):
+    '''
+    获取返回类型
+    类
+    方法名
+    '''
+    if __class__ is None:
+        raise Exception("class not allow null")
+    if not hasattr(__class__, method_name):
+        raise Exception("class not find method name :" + method_name)
+    call_method = getattr(__class__, method_name)
+    args_types = []
+    sig = inspect.signature(call_method)
+    for param_name, param in sig.parameters.items():
+        if param.annotation != inspect.Parameter.empty:
+            args_types.append(param.annotation)
+    # 获取函数签名
+    sig = inspect.signature(call_method)
+    # 获取返回值类型提示
+    return_type = sig.return_annotation if sig.return_annotation != inspect.Parameter.empty else None
+    return args_types, return_type
+
+
 def leetcode_run(**kwargs):
     '''
     调用函数入口
-    :param class_name: 类
-    :param method:  方法名
-    :param filename: 文件路径
+    :param class_name | __class__: 类
+    :param method | __method__:  方法名
+    :param filename | __file__: 文件路径
+    :param __is_constructor__ : 是不是构造类
+    :param filename | __file__: 文件路径
     :param kwargs:
     :return:
     '''
-    # print(kwargs)
-    c = kwargs['class_name']
-    m = kwargs['method']
-    filename = kwargs['filename']
+    __class__ = kwargs['__class__'] if "__class__" in kwargs else kwargs['class_name']
+    __method__ = kwargs['__method__'] if "__method__" in kwargs else kwargs['method']
+    __file__ = kwargs['__file__'] if "__file__" in kwargs else kwargs['filename']
+    __is_constructor__ = True if "__is_constructor__" in kwargs else False
+    __call_obj__ = kwargs['__call_obj__'] if "__call_obj__" in kwargs else None
 
-    test_case_start = getattr(c(), "start", 1)
-    test_case_end = getattr(c(), "end", 0x3ffffffff)
-    test_case_use = getattr(c(), "use", True)
-    test_case_test = getattr(c(), "test", -1)
-    if hasattr(c, m):
-        call_method = getattr(c(), m)
-        args_types = []
-        sig = inspect.signature(call_method)
-        for param_name, param in sig.parameters.items():
-            if param.annotation != inspect.Parameter.empty:
-                args_types.append(param.annotation)
-        # 获取函数签名
-        sig = inspect.signature(call_method)
-        # 获取返回值类型提示
-        return_type = sig.return_annotation if sig.return_annotation != inspect.Parameter.empty else None
+    test_case_start = getattr(__class__, "start", 1)
+    test_case_end = getattr(__class__, "end", 0x3ffffffff)
+    test_case_use = getattr(__class__, "use", True)
+    test_case_test = getattr(__class__, "test", -1)
 
+    inputs = []
+    if __is_constructor__:
+        inputs = __file__
+    else:
+        if __file__:
+            inputs = parse_lc_input(filename=__file__)
+            if len(inputs) == 0:
+                raise BaseException(f"输入文件{__file__}为空！ 请手动复制题目样例 ")
+
+    if __method__ == CONSTRUCTOR_FLAG:
+        method_names = None
+        constructor_inputs = None
+        read_cur_line = 1
+        all_ok = True
+        compare_times = 1
+        for index in range(len(inputs)):
+            if ParseInput.is_ignore_str(inputs[index]):
+                continue
+            if read_cur_line == 1:
+                method_names = ParseInput.parse_one_str_array_list(inputs[index])
+            elif read_cur_line == 2:
+                constructor_inputs = ParseInput.handler_constructor_input(inputs[index])
+                # 下面方法为测试阶段
+                # constructor_inputs = ParseInput.handler_constructor_input_test(inputs[index])
+            elif read_cur_line == 3:
+                constructor_outputs = ParseInput.parse_one_str_array_list(inputs[index])
+                # 处理完毕输入输出 开始构造对拍
+                try:
+                    if method_names and constructor_inputs and constructor_outputs and len(method_names) == len(
+                            constructor_inputs) and len(constructor_inputs) == len(constructor_outputs):
+                        # 初始化
+                        args_types, return_type = get_arg_type_and_return_type_by_class(__class__, "__init__")
+                        __call_obj__ = None
+                        params = []
+                        # 解析入参
+                        for args_input, args_type in zip(constructor_inputs[0], args_types):
+                            params.append(parse_lc_type(args_input=args_input, args_type=args_type))
+                        __call_obj__ = __class__(*params)
+                        ok = True
+                        for temp_method_name,input_str,output_str in zip(method_names[1:], constructor_inputs[1:], constructor_outputs[1:]):
+                            try:
+                                v = leetcode_run(__class__=__class__, __method__=temp_method_name,__file__= [*input_str, output_str],__is_constructor__=True, __call_obj__=__call_obj__)
+                                if not v:
+                                    ok = False
+                            except Exception as error:
+                                print('call error',error,"method name = ",temp_method_name)
+                                print()
+                                ok = False
+                        if not ok:
+                            all_ok = False
+                            print('run times',compare_times,'not ok')
+                    else:
+                        print('解析失败！参数格式错误！')
+                        return False
+                except Exception as e:
+                    print(e)
+                    return False
+            if read_cur_line == 3:
+                read_cur_line = 0
+                compare_times += 1
+            read_cur_line += 1
+        if all_ok:
+            print('Accepted!')
+    else:
+
+        args_types, return_type = get_arg_type_and_return_type_by_class(__class__, __method__)
         # 如果返回值是基本类型 需要处理成引用类型 基本类型如果没有返回值无法比较
-        if return_type is None:
+        if not __is_constructor__ and return_type is None:
             for param_type in args_types:
                 if not BaseUtil.is_base_type(param_type):
                     return_type = param_type
         i = 0
-        inputs = parse_lc_input(filename=filename)
-        if len(inputs) == 0:
-            raise BaseException(f"输入文件{filename}为空！ 请手动复制题目样例 ")
+
         compare_time = 1
         compare_result = []
         all_ok = True
+        N = len(inputs)
 
-        while i < len(inputs):
+        while i < N:
             if len(inputs[i]) == 0:
                 i += 1
                 continue
             params = []
             # 解析入参
             for arg in args_types:
+                if i >= N:
+                    raise BaseException("解析失败 ！ 输入越界 ！")
                 # 必须读入结果 输入结果不能为空
                 while ParseInput.is_ignore_str(inputs[i]): i += 1
                 # 解析参数结果放入
                 params.append(parse_lc_type(args_input=inputs[i], args_type=arg))
                 i += 1
             # 不能输入None
-            while ParseInput.is_ignore_str(inputs[i]): i += 1
+            while i < N and ParseInput.is_ignore_str(inputs[i]): i += 1
             # 希望返回的结果
             return_except = parse_lc_type(args_input=inputs[i], args_type=return_type)
 
@@ -584,43 +759,43 @@ def leetcode_run(**kwargs):
                     else:
                         continue
 
+            call_run_method = getattr(__call_obj__ if __call_obj__ else __class__(), __method__)
             # 调用函数
-            solution = getattr(c(), m)
-            return_result = solution(*params)
+            return_result = call_run_method(*params)
 
             # 处理返回值
             return_type_name = ParseInput.ignore_optional_or_type(str(return_type))
-            contains_tree_node_list_node = (TreeNode.__name__ in return_type_name) or (
-                    ListNode.__name__ in return_type_name)
+            contains_tree_node_list_node = (TreeNode.__name__ in return_type_name) or (ListNode.__name__ in return_type_name)
             if return_type is not None:
                 is_ok = False
                 deep = return_type_name.count('[')
                 if contains_tree_node_list_node:
-                    is_ok = BaseUtil.handler_list_or_node(deep=deep + 1, return_type_name=return_type_name,
-                                                          return_result=return_result, return_except=return_except)
+                    is_ok = BaseUtil.handler_list_or_node(deep=deep + 1, return_type_name=return_type_name,return_result=return_result, return_except=return_except)
                 else:
                     is_ok = return_result == return_except
                     if not is_ok and deep > 0:
-                        is_ok = BaseUtil.handler_list_or_node(deep=deep, return_type_name=return_type_name,
-                                                              return_result=return_result, return_except=return_except)
+                        is_ok = BaseUtil.handler_list_or_node(deep=deep, return_type_name=return_type_name,return_result=return_result,return_except=return_except)
                 compare_result.append((is_ok, return_result, return_except))
                 if not is_ok:
                     print('result:', return_result if return_result != '' else '\"\"')
                     print('except:', return_except if return_except != '' else '\"\"')
-                    print('compare times:', compare_time)
+                    if __is_constructor__:
+                        print('method name :', __method__)
+                    else:
+                        print('compare times:', compare_time)
                     print()
                     all_ok = False
             else:
-                print('返回类型为 none 请自行比较')
-
+                if __is_constructor__:
+                    return return_except == 'null'
+                else:
+                    print('返回类型为 none 请自行比较')
+                    return False
             compare_time += 1
             i += 1
 
         if all_ok:
-            print("Accepted!")
-        elif return_type is None:
-            print('返回类型为 none 请自行比较')
-    elif m == CONSTRUCTOR_FLAG:
-        print('\n构造函数对拍暂未实现😥\n')
-    else:
-        print('error')
+            if not __is_constructor__:
+                print("Accepted!")
+            return True
+        return all_ok
