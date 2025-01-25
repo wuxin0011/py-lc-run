@@ -5,6 +5,7 @@ ZH_TIP_FLAG = '提示'
 EN_INPUT_FLAG = 'Input'
 EN_OUTPUT_FLAG = 'Output'
 EN_EXPLAIN_FLAG = 'Explanation'
+EN_EXPLAIN_FLAG1 = 'Explaination'
 EN_TIP_FLAG = 'tips'
 ERROR_TEST_CASE_FLAG = 'this_case_parse_error'
 
@@ -87,12 +88,26 @@ def handler_input_example(s='', is_example_test_case=False, is_ZH=False):
     return input_example
 
 
+def match_flag_words(text: str, flags=None):
+    '''
+    由于匹配flag内容不同，有时候会改变，因此需要加入多模式匹配
+    '''
+    if flags is None:
+        flags = []
+    for flag in flags:
+        i = text.find(flag)
+        if i != -1:
+            return [i, flag, text.count(flag)]
+    return [-1, ERROR_TEST_CASE_FLAG, 0]
+
+
 def parse_case_new(html, is_ZH=False):
     from bs4 import BeautifulSoup
-    input_str_flag = ZH_INPUT_FLAG if is_ZH else EN_INPUT_FLAG
-    out_str_flag = ZH_OUTPUT_FLAG if is_ZH else EN_OUTPUT_FLAG
-    explain_str_flag = ZH_EXPLAIN_FLAG if is_ZH else EN_EXPLAIN_FLAG
-    tip_str_flag = ZH_TIP_FLAG if is_ZH else EN_TIP_FLAG
+    input_str_flags = [ZH_INPUT_FLAG] if is_ZH else [EN_INPUT_FLAG, EN_INPUT_FLAG.lower()]
+    out_str_flags = [ZH_OUTPUT_FLAG] if is_ZH else [EN_OUTPUT_FLAG, EN_OUTPUT_FLAG.lower()]
+    explain_str_flags = [ZH_EXPLAIN_FLAG] if is_ZH else [EN_EXPLAIN_FLAG, EN_EXPLAIN_FLAG1, EN_EXPLAIN_FLAG.lower(),
+                                                         EN_EXPLAIN_FLAG1.lower()]
+    tip_str_flags = [ZH_TIP_FLAG] if is_ZH else [EN_TIP_FLAG, EN_TIP_FLAG.lower()]
     try:
         soup = BeautifulSoup(html, 'lxml')
         outputs = []
@@ -103,8 +118,8 @@ def parse_case_new(html, is_ZH=False):
         if start_cnt == end_cnt and end_cnt > 0:
             pres = soup.select('pre')
             for pre in pres:
-                i = pre.text.find(out_str_flag)
-                j = pre.text.find(explain_str_flag)
+                i, out_str_flag, _ = match_flag_words(pre.text, out_str_flags)
+                j, explain_str_flag, _ = match_flag_words(pre.text, explain_str_flags)
                 if i != -1:
                     if j != -1 and i < j:
                         outputs.append(replace(pre.text[i + len(out_str_flag):j]))
@@ -117,9 +132,9 @@ def parse_case_new(html, is_ZH=False):
             if divs:
                 for element in divs:
                     if not element: continue
-                    i = element.text.find(out_str_flag)
-                    j = element.text.find(explain_str_flag)
-                    k = element.text.find(tip_str_flag)
+                    i, out_str_flag, _ = match_flag_words(element.text, out_str_flags)
+                    j, explain_str_flag, _ = match_flag_words(element.text, explain_str_flags)
+                    k, tip_str_flag, _ = match_flag_words(element.text, tip_str_flags)
                     if 0 < i < j:
                         outputs.append(replace(element.text[i + len(out_str_flag):j]))
                     elif 0 < i < k:
@@ -138,32 +153,35 @@ def parse_case_new(html, is_ZH=False):
                                 outputs.append(ERROR_TEST_CASE_FLAG)
             else:
                 # 最后的兼容
-                in_cnt = html.count(input_str_flag)
-                out_cnt = html.count(out_str_flag)
-                explain_cnt = html.count(explain_str_flag)
+                _, input_str_flag, in_cnt = match_flag_words(html, input_str_flags)
+                _, out_str_flag, out_cnt = match_flag_words(html, out_str_flags)
+                _, explain_str_flag, explain_cnt = match_flag_words(html, explain_str_flags)
                 if out_cnt != 0:
-                    j = html.find(out_str_flag)
-                    k = html.find(explain_str_flag)
+                    j, out_str_flag, _ = match_flag_words(html, out_str_flags)
+                    k, explain_str_flag, _ = match_flag_words(html, explain_str_flags)
                     while 0 < j < k:
                         outputs.append(replace(html[j + len(out_str_flag):k]))
                         html = html[k + len(explain_str_flag):]
-                        j = html.find(out_str_flag)
-                        k = html.find(explain_str_flag)
-                    if explain_cnt > 0 and explain_cnt != out_cnt and html.find(explain_str_flag) == -1 and html.find(
-                            tip_str_flag) != -1:
-                        j = html.find(out_str_flag)
-                        k = html.find(tip_str_flag)
+                        j, out_str_flag, _ = match_flag_words(html, out_str_flags)
+                        k, explain_str_flag, _ = match_flag_words(html, explain_str_flags)
+                    tip_index, tip_str_flag, _ = match_flag_words(html, tip_str_flags)
+                    if explain_cnt > 0 and explain_cnt != out_cnt and html.find(
+                            explain_str_flag) == -1 and tip_index != -1:
+                        j, out_str_flag, _ = match_flag_words(html, out_str_flags)
+                        k, tip_str_flag, _ = match_flag_words(html, tip_str_flags)
                         while 0 < j < k:
                             for x in range(4, -1, -1):
-                                if k - x < j: continue
+                                if k - x < j:
+                                    continue
                                 outputs.append(replace(html[j + len(out_str_flag):k - x]))
                                 html = html[k + len(tip_str_flag):]
-                                j = html.find(out_str_flag)
-                                k = html.find(tip_str_flag)
+                                j, out_str_flag, _ = match_flag_words(html, out_str_flags)
+                                k, tip_str_flag, _ = match_flag_words(html, tip_str_flags)
                                 break
 
         return outputs
     except Exception as e:
+        print('parse output testcase error', e)
         return []
 
 
@@ -176,7 +194,7 @@ def parse_case(html_str, exampleTestcaseList, is_example_test_case=False, is_ZH=
         n = len(handler_input)
         if out_len == 0 or n % out_len != 0:
             print('案例解析失败！请手动copy😥')
-            return '\n'.join(handler_input)
+            return '\n'.join([replace(s) for s in handler_input])
         group = n // out_len
         k = 0
         j = 0
