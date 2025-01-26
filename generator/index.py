@@ -47,6 +47,7 @@ class TreeNode:
         self.left = left
         self.right = right
         self.val = val
+
     @staticmethod
     def create_tree(ls):
         if not ls or len(ls) == 0 or ls[0] is None or TreeNode.is_null_node(ls[0]):
@@ -200,6 +201,7 @@ class ParseInput:
         for _ in range(deep):
             ans += right
         return ans
+
     @staticmethod
     def remove_outer(temp: str):
         fi = temp.find('[')
@@ -275,8 +277,8 @@ class ParseInput:
             if ParseInput.is_ignore_str(c):
                 continue
             if c == '[':
-               d += 1
-               cur += c
+                d += 1
+                cur += c
             elif c == ']':
                 d -= 1
                 cur += c
@@ -295,6 +297,7 @@ class ParseInput:
         if cur:
             args.append(cur)
         return args
+
     @staticmethod
     def handler_constructor_input(s: str):
         ans = []
@@ -338,7 +341,7 @@ class ParseInput:
     # 解析字符串相关
     @staticmethod
     def is_ignore_str(c: str):
-        return c == '\n' or c == '\t' or c == '\f' or c == '\r' or c == ' '
+        return c == '\n' or c == '\t' or c == '\f' or c == '\r'
 
     @staticmethod
     def parse_list(deep, input_str, type_name):
@@ -535,7 +538,8 @@ def parse_lc_type(**args):
     :return:
     '''
     args_type = args['args_type']
-    args_input = replace(args['args_input'])
+    __remove_space__ = args['__remove_space__'] if '__remove_space__' in args else False
+    args_input = replace(args['args_input'], remove_space=__remove_space__)
     type_name = ParseInput.ignore_optional_or_type(str(args_type))
     if args_type is None:
         return args_input
@@ -550,7 +554,6 @@ def parse_lc_type(**args):
     elif type_name.find("[") != -1:
         # 这部分兼容上面处理方式
         # 这部分作旧版本兼容处理 => List[List[int]]
-
         is_tree_or_list_node = ListNode.__name__ in type_name or TreeNode.__name__ in type_name
         return ParseInput.parse_list(type_name.count("[") + int(is_tree_or_list_node), args_input, type_name)
     elif ListNode.__name__ in type_name or TreeNode.__name__ in type_name:
@@ -635,22 +638,24 @@ def leetcode_run(**kwargs):
     调用函数入口
     :param class_name | __class__: 类
     :param method | __method__:  方法名
-    :param filename | __file__: 文件路径
+    :param filename | __file__: 文件路径 构造类是通过递归调用的
     :param __is_constructor__ : 是不是构造类
-    :param filename | __file__: 文件路径
-    :param kwargs:
-    :return:
+    :param __remove_space__ : 是否移出testcase的空格，如果为True，将会移出所有的case中的' ' ,否则只移出左右的ID
+    :return: True 表示对拍成功 否则失败
     '''
     __class__ = kwargs['__class__'] if "__class__" in kwargs else kwargs['class_name']
     __method__ = kwargs['__method__'] if "__method__" in kwargs else kwargs['method']
     __file__ = kwargs['__file__'] if "__file__" in kwargs else kwargs['filename']
-    __is_constructor__ = True if "__is_constructor__" in kwargs else False
+    __is_constructor__ = kwargs['__is_constructor__'] if "__is_constructor__" in kwargs else False
     __call_obj__ = kwargs['__call_obj__'] if "__call_obj__" in kwargs else None
+    __remove_space__ = kwargs['__remove_space__'] if "__remove_space__" in kwargs else False
 
+    # --------------------------------------------------------------------------------------------
     test_case_start = getattr(__class__, "start", 1)
     test_case_end = getattr(__class__, "end", 0x3ffffffff)
     test_case_use = getattr(__class__, "use", True)
     test_case_test = getattr(__class__, "test", -1)
+    # --------------------------------------------------------------------------------------------
 
     inputs = []
     if __is_constructor__:
@@ -688,21 +693,25 @@ def leetcode_run(**kwargs):
                         params = []
                         # 解析入参
                         for args_input, args_type in zip(constructor_inputs[0], args_types):
-                            params.append(parse_lc_type(args_input=args_input, args_type=args_type))
+                            params.append(parse_lc_type(args_input=args_input, args_type=args_type,
+                                                        __remove_space__=__remove_space__))
                         __call_obj__ = __class__(*params)
                         ok = True
-                        for temp_method_name,input_str,output_str in zip(method_names[1:], constructor_inputs[1:], constructor_outputs[1:]):
+                        for temp_method_name, input_str, output_str in zip(method_names[1:], constructor_inputs[1:],
+                                                                           constructor_outputs[1:]):
                             try:
-                                v = leetcode_run(__class__=__class__, __method__=temp_method_name,__file__= [*input_str, output_str],__is_constructor__=True, __call_obj__=__call_obj__)
+                                v = leetcode_run(__class__=__class__, __method__=temp_method_name,
+                                                 __file__=[*input_str, output_str], __is_constructor__=True,
+                                                 __call_obj__=__call_obj__)
                                 if not v:
                                     ok = False
                             except Exception as error:
-                                print('call error',error,"method name = ",temp_method_name)
+                                print('call error', error, "method name = ", temp_method_name)
                                 print()
                                 ok = False
                         if not ok:
                             all_ok = False
-                            print('run times',compare_times,'not ok')
+                            print('run times', compare_times, 'not ok')
                     else:
                         print('解析失败！参数格式错误！')
                         return False
@@ -742,12 +751,13 @@ def leetcode_run(**kwargs):
                 # 必须读入结果 输入结果不能为空
                 while ParseInput.is_ignore_str(inputs[i]): i += 1
                 # 解析参数结果放入
-                params.append(parse_lc_type(args_input=inputs[i], args_type=arg))
+                params.append(parse_lc_type(args_input=inputs[i], args_type=arg, __remove_space__=__remove_space__))
                 i += 1
             # 不能输入None
             while i < N and ParseInput.is_ignore_str(inputs[i]): i += 1
             # 希望返回的结果
-            return_except = parse_lc_type(args_input=inputs[i], args_type=return_type)
+            return_except = parse_lc_type(args_input=inputs[i], args_type=return_type,
+                                          __remove_space__=__remove_space__)
 
             if test_case_use:
                 if test_case_test != -1 and compare_time != test_case_test or (
@@ -765,16 +775,19 @@ def leetcode_run(**kwargs):
 
             # 处理返回值
             return_type_name = ParseInput.ignore_optional_or_type(str(return_type))
-            contains_tree_node_list_node = (TreeNode.__name__ in return_type_name) or (ListNode.__name__ in return_type_name)
+            contains_tree_node_list_node = (TreeNode.__name__ in return_type_name) or (
+                    ListNode.__name__ in return_type_name)
             if return_type is not None:
                 is_ok = False
                 deep = return_type_name.count('[')
                 if contains_tree_node_list_node:
-                    is_ok = BaseUtil.handler_list_or_node(deep=deep + 1, return_type_name=return_type_name,return_result=return_result, return_except=return_except)
+                    is_ok = BaseUtil.handler_list_or_node(deep=deep + 1, return_type_name=return_type_name,
+                                                          return_result=return_result, return_except=return_except)
                 else:
                     is_ok = return_result == return_except
                     if not is_ok and deep > 0:
-                        is_ok = BaseUtil.handler_list_or_node(deep=deep, return_type_name=return_type_name,return_result=return_result,return_except=return_except)
+                        is_ok = BaseUtil.handler_list_or_node(deep=deep, return_type_name=return_type_name,
+                                                              return_result=return_result, return_except=return_except)
                 compare_result.append((is_ok, return_result, return_except))
                 if not is_ok:
                     print('result:', return_result if return_result != '' else '\"\"')

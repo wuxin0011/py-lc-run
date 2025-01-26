@@ -10,7 +10,7 @@ EN_TIP_FLAG = 'tips'
 ERROR_TEST_CASE_FLAG = 'this_case_parse_error'
 
 
-def replace(s: str, newLine=True):
+def replace(s: str, newLine=True,remove_space = False):
     try:
         s = s.replace(ZH_INPUT_FLAG, '')
         s = s.replace(ZH_OUTPUT_FLAG, '')
@@ -42,11 +42,27 @@ def replace(s: str, newLine=True):
         s = s.replace('\'', '')
         s = s.replace('>', '')
         s = s.replace('<', '')
-        s = s.replace(' ', '')
         s = s.replace('`', '')
         s = s.replace(':', '')
         s = s.replace('：', '')
         s = s.replace(';', '')
+        if remove_space:
+            s = s.replace(' ','')
+        else:
+            # 过滤案例两边的多余的 ' '
+            n = len(s)
+            fi = -1
+            la = -1
+            for i in range(n):
+                if s[i] != ' ':
+                    fi = i
+                    break
+            for i in range(n - 1, -1, -1):
+                if s[i] != ' ':
+                    la = i
+                    break
+            if 0 <= fi <= la:
+                return s[fi:la + 1]
         return s if s else " "
     except:
         return s
