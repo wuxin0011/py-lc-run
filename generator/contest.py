@@ -112,11 +112,10 @@ def contestQuestion(contestSlug, questionSlug):
 def handler_question_info(question_info={}, name='', dir_prefix='', username='', access_url=''):
     if question_info is None:
         question_info = {}
+    if "codeSnippets" not in question_info:
+        raise Exception("解析失败！请检查cookie是否过期!!!")
     try:
         code = ''
-        if "codeSnippets" not in question_info:
-            raise Exception("解析失败！请检查cookie是否过期!!!")
-
         for s in question_info['codeSnippets']:
             if "lang" in s and s['lang'] == 'Python3':
                 code = s['code']
@@ -172,6 +171,8 @@ def parse_problem_by_url(url='', pre_dir=''):
     '''
     from bs4 import BeautifulSoup
     username = get_user_name()
+    if username is None or not username:
+        raise BaseException("请检查Cookies是否过期！")
     try:
         url = f'{LC_PROBLEM_PREFIX}/{get_title_slug_by_url(url)}'
         print("access_url", url)
@@ -208,15 +209,12 @@ def parse_problem_by_url(url='', pre_dir=''):
                                               access_url=f'{LC_PROBLEM_PREFIX}/{question["titleSlug"]}')
         if not ok:
             print('解析失败')
-
-
     except Exception as e:
         print(e)
 
 
 def parse_problem_by_urls(pre_dir=''):
     print("请输入题目链接(可批量处理) 输入两次回车开始解析:\n")
-
     def read_input_in_chunks():
         full_input = ''
         while True:
@@ -337,7 +335,6 @@ def create_next_contest():
             get_no_contest(cur_info['contest_no'], cur_info['titleSlug'])
         else:
             print(f"距离 {cur_info['title']} 开始还剩:{minute}分钟 请在一个小时内等待 ！")
-
     # print((cur_info['diff_time'] / (60 * 60 * 24) - cur_info['diff_time'] // (60 * 60 * 24)) * 24 * 60)
 
 
@@ -356,6 +353,8 @@ def create_contest_by_contest_id(is_bi_week=False):
             if not ok:
                 cur_info = info
                 break
+    if 'contest_no' not in cur_info:
+        raise BaseException("请检查Cookies是否过期！")
     contest_max_no = cur_info['contest_no']
     minute = cur_info['diff_minute']
     cur_id = 0

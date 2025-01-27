@@ -156,7 +156,7 @@ def parse_case_new(html, is_ZH=False):
                     elif 0 < i < k:
                         outputs.append(replace(element.text[i + len(out_str_flag):k - 4]))
                     elif 0 < i and k == -1:
-                        outputs.append(replace(element.text[i + len(out_str_flag)]))
+                        outputs.append(replace(element.text[i + len(out_str_flag):]))
                     else:
                         tags = element.select('[class="example-io"]')
                         if tags:
