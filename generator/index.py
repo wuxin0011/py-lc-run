@@ -1,7 +1,7 @@
 import inspect
 import re
 import typing
-from collections import deque
+from collections import deque, Counter
 
 from generator.generator_template import CONSTRUCTOR_FLAG
 from generator.parse_test_case import replace
@@ -569,13 +569,14 @@ class BaseUtil:
         return type_name in bases
 
     @staticmethod
-    def handler_list_or_node(deep, return_type_name, return_result, return_except):
+    def handler_list_or_node(deep, return_type_name, return_result, return_except, __unordered__=False):
         '''
         递归处理各级列表
         :param return_type_name: 类型名
         :param return_result: 返回结果
         :param return_except: 预期结果
         :param return_result: 全部相等
+        :param __unordered__: 如果不注重元素顺序
         :param deep: 深度
         :return:
         '''
@@ -586,12 +587,17 @@ class BaseUtil:
             if "List" in return_type_name:
                 try:
                     if len(return_result) == len(return_except):
-                        return all(BaseUtil.handler_list_or_node(deep - 1, return_type_name, return_result_node,
-                                                                 return_except_node) for
-                                   return_result_node, return_except_node in zip(return_result, return_except))
+                        if deep <= 2 and __unordered__:
+                            return Counter(tuple(sorted(x)) for x in sorted(return_result)) == Counter(
+                                tuple(sorted(x)) for x in sorted(return_except))
+                        else:
+                            return all(BaseUtil.handler_list_or_node(deep - 1, return_type_name, return_result_node,
+                                                                     return_except_node, __unordered__) for
+                                       return_result_node, return_except_node in zip(return_result, return_except))
                     else:
                         return False
-                except:
+                except Exception as e:
+                    print('结果对比出现异常', e, "result:", return_result, "except:", return_except)
                     return False
             else:
                 if ListNode.__name__ in return_type_name:
@@ -636,11 +642,12 @@ def get_arg_type_and_return_type_by_class(__class__, method_name='__init__'):
 def leetcode_run(**kwargs):
     '''
     调用函数入口
-    :param class_name | __class__: 类
-    :param method | __method__:  方法名
-    :param filename | __file__: 文件路径 构造类是通过递归调用的
-    :param __is_constructor__ : 是不是构造类
-    :param __remove_space__ : 是否移出testcase的空格，如果为True，将会移出所有的case中的' ' ,否则只移出左右的ID
+    :param class_name | __class__ :  类
+    :param method | __method__    :  方法名
+    :param filename | __file__    : 文件路径 构造类是通过递归调用的
+    :param __is_constructor__     : 是不是构造类
+    :param __remove_space__       : 是否移出testcase的空格，如果为True，将会移出所有的case中的' ' ,否则只移出左右的ID
+    :param __unordered__           : 是否注重元素顺序，如果无需注意元素顺序 开启这个模式
     :return: True 表示对拍成功 否则失败
     '''
     __class__ = kwargs['__class__'] if "__class__" in kwargs else kwargs['class_name']
@@ -649,6 +656,7 @@ def leetcode_run(**kwargs):
     __is_constructor__ = kwargs['__is_constructor__'] if "__is_constructor__" in kwargs else False
     __call_obj__ = kwargs['__call_obj__'] if "__call_obj__" in kwargs else None
     __remove_space__ = kwargs['__remove_space__'] if "__remove_space__" in kwargs else False
+    __unordered__ = kwargs['__unordered__'] if "__unordered__" in kwargs else False
 
     # --------------------------------------------------------------------------------------------
     test_case_start = getattr(__class__, "start", 1)
@@ -700,10 +708,10 @@ def leetcode_run(**kwargs):
                         for temp_method_name, input_str, output_str in zip(method_names[1:], constructor_inputs[1:],
                                                                            constructor_outputs[1:]):
                             try:
-                                v = leetcode_run(__class__=__class__, __method__=temp_method_name,
-                                                 __file__=[*input_str, output_str], __is_constructor__=True,
-                                                 __call_obj__=__call_obj__)
-                                if not v:
+                                test_result = leetcode_run(__class__=__class__, __method__=temp_method_name,
+                                                           __file__=[*input_str, output_str], __is_constructor__=True,
+                                                           __call_obj__=__call_obj__, __unordered__=__unordered__)
+                                if not test_result:
                                     ok = False
                             except Exception as error:
                                 print('call error', error, "method name = ", temp_method_name)
@@ -746,15 +754,17 @@ def leetcode_run(**kwargs):
             params = []
             # 解析入参
             for arg in args_types:
-                if i >= N:
-                    raise BaseException("解析失败 ！ 输入越界 ！")
                 # 必须读入结果 输入结果不能为空
-                while ParseInput.is_ignore_str(inputs[i]): i += 1
+                while i < N and ParseInput.is_ignore_str(inputs[i]): i += 1
+                if i >= N:
+                    raise BaseException("解析失败！输入越界 请检查输入是否合法 ")
                 # 解析参数结果放入
                 params.append(parse_lc_type(args_input=inputs[i], args_type=arg, __remove_space__=__remove_space__))
                 i += 1
             # 不能输入None
             while i < N and ParseInput.is_ignore_str(inputs[i]): i += 1
+            if i >= N:
+                raise BaseException("解析失败！输入越界 请检查输入是否合法 ")
             # 希望返回的结果
             return_except = parse_lc_type(args_input=inputs[i], args_type=return_type,
                                           __remove_space__=__remove_space__)
@@ -782,12 +792,14 @@ def leetcode_run(**kwargs):
                 deep = return_type_name.count('[')
                 if contains_tree_node_list_node:
                     is_ok = BaseUtil.handler_list_or_node(deep=deep + 1, return_type_name=return_type_name,
-                                                          return_result=return_result, return_except=return_except)
+                                                          return_result=return_result, return_except=return_except,
+                                                          __unordered__=__unordered__)
                 else:
                     is_ok = return_result == return_except
                     if not is_ok and deep > 0:
                         is_ok = BaseUtil.handler_list_or_node(deep=deep, return_type_name=return_type_name,
-                                                              return_result=return_result, return_except=return_except)
+                                                              return_result=return_result, return_except=return_except,
+                                                              __unordered__=__unordered__)
                 compare_result.append((is_ok, return_result, return_except))
                 if not is_ok:
                     print('result:', return_result if return_result != '' else '\"\"')

@@ -112,7 +112,7 @@ def default_end(class_name='Solution', method="method", input_file='in.txt'):
     '''
     template_str = f'''\n
 if __name__ == '__main__':
-    leetcode_run(__class__={class_name}, __method__="{method}", __file__=os.getcwd() +"\\\\{TEST_CASE_DIR}\\\\{input_file}")
+    leetcode_run(__class__={class_name}, __method__="{method}", __file__=os.getcwd() +"\\\\{TEST_CASE_DIR}\\\\{input_file}",__unordered__=False)
 '''
     return template_str
 
