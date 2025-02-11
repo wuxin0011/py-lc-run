@@ -22,6 +22,9 @@ API_PREFIX = LC_PREFIX + "/contest/api/info/"
 LC_CLASS_THEME_PREFIX = LC_PREFIX + "/classic/problems"
 
 
+
+
+
 def get_header():
     cookie_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../cookie.txt")
     # print(cookie_file_path)
@@ -146,8 +149,8 @@ def handler_question_info(question_info={}, name='', dir_prefix='', username='',
         if not test_case:
             pass
         if code:
-            generator_template(code=code, py_file=dir_prefix + f"\\{name}.py",
-                               input_file=dir_prefix + f"\\{TEST_CASE_DIR}\\{name}.txt", test_case=test_case,
+            generator_template(code=code, py_file=os.path.join(dir_prefix,f"{name}.py"),
+                               input_file=os.path.join(dir_prefix,TEST_CASE_DIR,f"{name}.txt"), test_case=test_case,
                                username=username,
                                access_url=access_url)
     except Exception as e:
@@ -215,6 +218,7 @@ def parse_problem_by_url(url='', pre_dir=''):
 
 def parse_problem_by_urls(pre_dir=''):
     print("请输入题目链接(可批量处理) 输入两次回车开始解析:\n")
+
     def read_input_in_chunks():
         full_input = ''
         while True:

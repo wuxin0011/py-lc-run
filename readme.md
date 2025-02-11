@@ -1,26 +1,17 @@
+## 这个是干什么的 ？
+
+一个本地模拟力扣周赛的工具，无需处理输入输出，更加方便debug，周赛快人一步 ！
 
 
 ## 效果预览
 
-![dir](./dir.png)
+![dir](./asserts/dir.png)
 
 
+## 使用文档
 
-## 使用前提
 
-### 1、 安装依赖库
-
-python >= 3.7
-
-```commandline
-pip install beautifulsoup4
-pip install requests
-```
-
-### 2、 配置 Cookie
-
-首次启动任意功能会在项目根目录生成一个`cookie.txt` 文件，在 LeetCode 账号登录情况下复制 cookie 信息 到这个文件中即可
-
+[./详细](./use.md)
 
 
 

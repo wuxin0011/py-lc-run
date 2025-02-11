@@ -115,7 +115,7 @@ if __name__ == '__main__':
     leetcode_run(
         __class__={class_name}, 
         __method__="{method}", 
-        __file__=os.getcwd() +"\\\\{TEST_CASE_DIR}\\\\{input_file}",
+        __file__=os.path.join(os.path.dirname(os.path.abspath(__file__)), "{TEST_CASE_DIR}", "{input_file}"),
         __remove_space__=True,
         __unordered__=False,
     )
