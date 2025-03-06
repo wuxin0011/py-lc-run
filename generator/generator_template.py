@@ -46,12 +46,8 @@ def handler_return_type(code):
             pre = pre[i:]
         suf = code[2 + len(SOLUTION_CLASS_NAME) + so_index:]
     else:
-        j = code.find("__init__")
-        i = -1
-        if j != -1:
-            i = j
-        if i == -1:
-            i = code.find("def")
+        # 2025-01-24 : 修复构造函数的pass
+        i = code.find("def")
         if i == -1:
             return code
         pre = code[:i]
