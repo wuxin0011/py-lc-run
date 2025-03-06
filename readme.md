@@ -112,3 +112,8 @@ if __name__ == '__main__':
 
 如果使用Java，可以使用[leetcode-template](https://github.com/wuxin0011/leetcode-template-simple)，这个功能更全面【实现了构造类对拍😍]
 
+
+## Thanks
+
+感谢 [JetBrains](https://www.jetbrains.com/?from=py-lc-run) 提供的 Open Source License
+
