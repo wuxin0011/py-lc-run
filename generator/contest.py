@@ -87,8 +87,8 @@ def get_user_name():
             s = json.loads(res.text)
             username = s['data']['userStatus']['username']
             return username
-    except:
-        pass
+    except Exception as e:
+        print('用户名获取异常:',e)
     return None
 
 

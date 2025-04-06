@@ -392,6 +392,40 @@ class ParseInput:
         return ans
 
     @staticmethod
+    def parse_one_output_str_array_list(output_str: str):
+        if len(output_str) == 0 or '[' not in output_str or ']' not in output_str:
+            return []
+        st = output_str.find('[')
+        ed = output_str.rfind(']')
+        output_str=output_str[st+1:ed]
+        deep = 0
+        ans = []
+        cur = ''
+        for c in output_str:
+            if ParseInput.is_ignore_str(c):
+                continue
+            if c == '[':
+                deep += 1
+                cur += c
+            elif c == ']':
+                deep -= 1
+                cur += c
+                if deep == 0:
+                    if cur:
+                        ans.append(cur)
+                    cur=''
+            elif c == ',':
+                if deep == 0:
+                    if cur:
+                        ans.append(cur)
+                    cur = ''
+                else:
+                    cur += c
+            else:
+                cur += c
+        if cur:ans.append(cur)
+        return ans
+    @staticmethod
     def parse_two_str_array_list(input_str: str):
         if len(input_str) == 0:
             return [[]]
@@ -690,7 +724,7 @@ def leetcode_run(**kwargs):
                 # 下面方法为测试阶段
                 # constructor_inputs = ParseInput.handler_constructor_input_test(inputs[index])
             elif read_cur_line == 3:
-                constructor_outputs = ParseInput.parse_one_str_array_list(inputs[index])
+                constructor_outputs = ParseInput.parse_one_output_str_array_list(inputs[index])
                 # 处理完毕输入输出 开始构造对拍
                 try:
                     if method_names and constructor_inputs and constructor_outputs and len(method_names) == len(
@@ -733,6 +767,7 @@ def leetcode_run(**kwargs):
         if all_ok:
             print('Accepted!')
     else:
+        __method__ = __method__.replace('\'','').replace('"','').replace('\"','')
 
         args_types, return_type = get_arg_type_and_return_type_by_class(__class__, __method__)
         # 如果返回值是基本类型 需要处理成引用类型 基本类型如果没有返回值无法比较
