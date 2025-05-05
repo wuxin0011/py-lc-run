@@ -50,7 +50,7 @@ class TreeNode:
 
     @staticmethod
     def create_tree(ls):
-        if not ls or len(ls) == 0 or ls[0] is None or TreeNode.is_null_node(ls[0]):
+        if not ls or ls == 'null' or len(ls) == 0 or ls[0] is None or TreeNode.is_null_node(ls[0]):
             return None
         q = deque()
         root = TreeNode(int(ls[0]))
@@ -589,7 +589,7 @@ def parse_lc_type(**args):
         # 这部分兼容上面处理方式
         # 这部分作旧版本兼容处理 => List[List[int]]
         is_tree_or_list_node = ListNode.__name__ in type_name or TreeNode.__name__ in type_name
-        return ParseInput.parse_list(type_name.count("[") + int(is_tree_or_list_node), args_input, type_name)
+        return ParseInput.parse_list(type_name.count("["), args_input, type_name)
     elif ListNode.__name__ in type_name or TreeNode.__name__ in type_name:
         return ParseInput.parse_list(1, args_input, type_name)
     raise BaseException("not implements:" + type_name)
