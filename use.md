@@ -40,10 +40,11 @@ pip install lxml
 ![调式](./asserts/vscode-debug-1.png)
 
 
-
-## 获取cookie方式 
+##  获取cookie方式  😺
 
 > 在账号登录情况下获取，参考下面顺序，不要使用其他方式
 
+f12 打开浏览器控制台下面按照如下操作获取cookie
 
 ![获取cookie](./asserts/cookie-help.png)
+
