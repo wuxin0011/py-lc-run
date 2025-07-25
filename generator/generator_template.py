@@ -69,31 +69,40 @@ def default_template(username='', access_url=''):
     '''
     template_header = f'''
 # ------------------------template auto generator---------------------------------------
-from generator.index import leetcode_run,ListNode,TreeNode,testcase
 import os
 
-# -----------------------------------------------------------------
+is_local = os.getenv("LEETCODE_USERNAME") != None
+if is_local:
+    from generator.index import leetcode_run, ListNode, TreeNode, testcase
+    # -----------------------------------------------------------------
 
-from itertools import *
-import math
-from heapq import heappop, heappush, heapify, heappushpop, heapreplace
-from typing import *
-from collections import Counter, defaultdict, deque
-from bisect import bisect_left, bisect_right
-# from sortedcontainers import SortedList, SortedSet, SortedKeyList, SortedItemsView, SortedKeysView, SortedValuesView
-from functools import cache, cmp_to_key, lru_cache
-# -----------------------------------------------------------------
+    from itertools import *
+    import math
+    from heapq import heappop, heappush, heapify, heappushpop, heapreplace
+    from typing import *
+    from collections import Counter, defaultdict, deque
+    from bisect import bisect_left, bisect_right
+    # from sortedcontainers import SortedList, SortedSet, SortedKeyList, SortedItemsView, SortedKeysView, SortedValuesView
+    from functools import cache, cmp_to_key, lru_cache
+else:
+    def testcase(test=-1, start=1, end=0x3ffffff, use=True):
+        def wrapper(f):
+            setattr(f, "start", max(1, start))
+            setattr(f, "end", max(1, end))
+            setattr(f, "use", use)
+            setattr(f, "test", test)
+            return f
 
-# @author: {username}
-# @access_url: {access_url}\n\n
-
+        return wrapper
 
 inf = math.inf
 fmax = lambda x, y: x if x > y else y
 fmin = lambda x, y: x if x < y else y
 MOD = 10 ** 9 + 7
 
-# @testcase(test=-1,start= 1,end = 0x3ffffff,use = True)
+# @author: {username}
+# @access_url: {access_url}\n\n
+@testcase(test=-1, start=1, end=0x3ffffff, use=True)
 '''
     return template_header
 
@@ -107,14 +116,15 @@ def default_end(class_name='Solution', method="method", input_file='in.txt'):
     :return:
     '''
     template_str = f'''\n
-if __name__ == '__main__':
-    leetcode_run(
-        __class__={class_name}, 
-        __method__="{method}", 
-        __file__=os.path.join(os.path.dirname(os.path.abspath(__file__)), "{TEST_CASE_DIR}", "{input_file}"),
-        __remove_space__=True,
-        __unordered__=False,
-    )
+if is_local:
+    if __name__ == '__main__':
+        leetcode_run(
+            __class__={class_name}, 
+            __method__="{method}", 
+            __file__=os.path.join(os.path.dirname(os.path.abspath(__file__)), "{TEST_CASE_DIR}", "{input_file}"),
+            __remove_space__=True,
+            __unordered__=False,
+        )
 '''
     return template_str
 
