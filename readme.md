@@ -10,13 +10,28 @@
 
 ## 使用文档
 
+### 1、环境变量配置
 
+为什么正常直接使用本次加了一些本地环境变量配置，请在`我的电脑环境变量`配置 `LEETCODE_USERNAME` 这个变量
+
+
+这样做的目的是为了直接复制到leetcode不用删除任何地方
+
+### 2、 cookie配置
 
 <h2 style="color:red;">请先配置好cookie!!!</h2>
 
 默认会在这个 [cookie.txt](./cookie.txt) 下生成如果不知道如何配置cookie下面
 
+
+
+
 [vscode使用说明以及cookie获取方式](./use.md)
+
+**当然你也可以选择使用这个工具 [cookie-editor](https://cookie-editor.com/)**
+
+
+### 3、接口演示
 
 由 [generator.index.py](./generator/index.py) 下面几个接口
  - `create_next_contest` 获取最近的周赛或者双周赛
@@ -74,13 +89,60 @@ def testcase(test=-1, start= 1, end=0x3ffffff, use=True):
 ### 👓 完整使用模板
 
 ```python
-@testcase(test=-1,start= 1,end = 0x3ffffff,use = True)
+# ------------------------template auto generator---------------------------------------
+import os
+is_local = os.getenv("LEETCODE_USERNAME") != None
+if is_local:
+    from generator.index import leetcode_run, ListNode, TreeNode, testcase
+    from itertools import *
+    import math
+    from heapq import heappop, heappush, heapify, heappushpop, heapreplace
+    from typing import *
+    from collections import Counter, defaultdict, deque
+    from bisect import bisect_left, bisect_right
+    # from sortedcontainers import SortedList, SortedSet, SortedKeyList, SortedItemsView, SortedKeysView, SortedValuesView
+    from functools import cache, cmp_to_key, lru_cache
+else:
+    def testcase(test=-1, start=1, end=0x3ffffff, use=True):
+        def wrapper(f):
+            setattr(f, "start", max(1, start))
+            setattr(f, "end", max(1, end))
+            setattr(f, "use", use)
+            setattr(f, "test", test)
+            return f
+
+        return wrapper
+
+
+
+
+inf = math.inf
+fmax = lambda x, y: x if x > y else y
+fmin = lambda x, y: x if x < y else y
+MOD = 10 ** 9 + 7
+
+
+# @access_url: https://leetcode.cn/problems/maximum-unique-subarray-sum-after-deletion
+
+@testcase(test=-1, start=1, end=0x3ffffff, use=True)
 class Solution:
-    def minOperations(self, nums: List[int], k: int) -> int:
-        pass
-        
-if __name__ == '__main__':
-    leetcode_run(class_name=Solution, method="minOperations", filename=os.getcwd() +"\\__test_case__\\3.txt")
+    def maxSum(self, nums: List[int]) -> int:
+        mx = max(nums)
+        if mx <= 0:
+            return mx
+        return sum(x for x in set(nums) if x >= 0)
+
+
+if is_local:
+    if __name__ == '__main__':
+        leetcode_run(
+            __class__=Solution, 
+            __method__="maxSum", 
+            __file__=os.path.join(os.path.dirname(os.path.abspath(__file__)), "__test_case__", "1.txt"),
+            __remove_space__=True,
+            __unordered__=False,
+        )
+
 
 ```
 
