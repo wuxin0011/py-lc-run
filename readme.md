@@ -12,7 +12,7 @@
 
 ### 1、环境变量配置
 
-为l正常直接使用加了一些本地环境变量配置，请在`我的电脑环境变量`配置 `LEETCODE_USERNAME` 这个变量，值随意
+为了正常直接使用加了一些本地环境变量配置，请在`我的电脑环境变量`配置 `LEETCODE_USERNAME` 这个变量，值随意
 
 这样做的目的是为了直接复制到leetcode不用删除任何地方
 
@@ -86,6 +86,10 @@ def testcase(test=-1, start= 1, end=0x3ffffff, use=True):
 
 
 ### 👓 完整使用模板
+
+
+下方是一个演示代码，可以直接复制到[这题](https://leetcode.cn/problems/maximum-unique-subarray-sum-after-deletion) 通过
+
 
 ```python
 # ------------------------template auto generator---------------------------------------
