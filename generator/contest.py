@@ -12,6 +12,7 @@ from generator.parse_test_case import parse_case
 applicationJSON = "application/json"
 applicationHTML = "text/html; charset=utf-8"
 LC_PREFIX = "https://leetcode.cn"
+LEETCODE_LC_PREFIX = "leetcode"
 # LC_PREFIX = "https://leetcode.com"
 LC_PROBLEM_PREFIX = LC_PREFIX + "/problems"
 LC_LOGIN = LC_PREFIX + "/accounts/login/"
@@ -159,7 +160,7 @@ def handler_question_info(question_info={}, name='', dir_prefix='', username='',
 
 def get_title_slug_by_url(url: str):
     try:
-        if LC_PREFIX in url:
+        if LEETCODE_LC_PREFIX in url:
             return url.split("problems/")[-1].split("/")[0]
     except:
         pass
@@ -231,11 +232,12 @@ def parse_problem_by_urls(pre_dir=''):
     full_input = read_input_in_chunks()
     urls = full_input
     time.sleep(1)
-    pattern = re.compile(r'(https?://\S+)')
+    # pattern = re.compile(r'(https?://\S+)')
+    pattern = re.compile(r'(leetcode\S+)')
     result = pattern.findall(urls)
     # print(result)
     for url in result:
-        if LC_PREFIX in url:
+        if 'leetcode' in url:
             parse_problem_by_url(url, pre_dir)
             time.sleep(2)
 
