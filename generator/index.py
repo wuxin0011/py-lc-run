@@ -359,11 +359,17 @@ class ParseInput:
                 if ParseInput.build_match_type(deep, name, left='List[') == type_name:
                     only_name = name
                     break
+                if ParseInput.build_match_type(deep, name, left='list[') == type_name:
+                    only_name = name
+                    break
                 if ParseInput.build_match_type(deep, t=name, left='typing.Optional[') == type_name:
                     only_name = name
                     break
+                if ParseInput.build_match_type(deep, t=name, left='typing.optional[') == type_name:
+                    only_name = name
+                    break
         if len(only_name) == 0:
-            return []
+            raise Exception("name 匹配失败！")
         return ParseInput.parse_one_type_array_list(deep, input_str, only_name)
 
     @staticmethod
@@ -577,7 +583,12 @@ def parse_lc_type(**args):
     type_name = ParseInput.ignore_optional_or_type(str(args_type))
     if args_type is None:
         return args_input
-    if type_name == "str":
+    if type_name.find("[") != -1:
+        # 这部分兼容上面处理方式
+        # 这部分作旧版本兼容处理 => List[List[int]]
+        is_tree_or_list_node = ListNode.__name__ in type_name or TreeNode.__name__ in type_name
+        return ParseInput.parse_list(type_name.count("["), args_input, type_name)
+    elif type_name == "str":
         return args_input
     elif type_name == "int" or type_name == 'int':
         return int(args_input)
@@ -585,11 +596,6 @@ def parse_lc_type(**args):
         return args_input.lower() == 'true'
     elif type_name == "float" or type_name == "float":
         return float(args_input)
-    elif type_name.find("[") != -1:
-        # 这部分兼容上面处理方式
-        # 这部分作旧版本兼容处理 => List[List[int]]
-        is_tree_or_list_node = ListNode.__name__ in type_name or TreeNode.__name__ in type_name
-        return ParseInput.parse_list(type_name.count("["), args_input, type_name)
     elif ListNode.__name__ in type_name or TreeNode.__name__ in type_name:
         return ParseInput.parse_list(1, args_input, type_name)
     raise BaseException("not implements:" + type_name)
